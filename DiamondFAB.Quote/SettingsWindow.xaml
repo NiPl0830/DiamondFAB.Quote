@@ -32,7 +32,7 @@
             <DataGrid x:Name="MaterialGrid" AutoGenerateColumns="False" CanUserAddRows="True" Height="150" Margin="0,5">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Material Code" Binding="{Binding Key}" Width="*"/>
-                    <DataGridTextColumn Header="Rate ($/sq in)" Binding="{Binding Value}" Width="*"/>
+                    <DataGridTextColumn Header="Rate ($/lbs)" Binding="{Binding Value}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
 

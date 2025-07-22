@@ -1,48 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DiamondFAB.Quote.Models;
 using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using DiamondFAB.Quote.Models;
 
 namespace DiamondFAB.Quote.Services
 {
-    public static class PrtFileParser
+    public static class XmlFileParser
     {
         public static PrtData Parse(string filePath)
         {
-            var data = new PrtData();
-            var lines = File.ReadAllLines(filePath);
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException(filePath);
 
-            foreach (var line in lines)
+            var doc = XDocument.Load(filePath);
+
+            string GetValue(string tagName) =>
+                doc.Descendants(tagName).FirstOrDefault()?.Value.Trim() ?? string.Empty;
+
+            var data = new PrtData
             {
-                if (line.Contains("Material Code")) data.MaterialCode = Extract(line);
-                else if (line.Contains("Material Thickness")) data.MaterialThickness = double.Parse(Extract(line));
-                else if (line.Contains("Material Feedrate")) data.FeedRate = double.Parse(Extract(line));
-                else if (line.Contains("Material Piercerate")) data.PierceRateSec = double.Parse(Extract(line));
-                else if (line.Contains("Raw Material Length")) data.RawLength = double.Parse(Extract(line));
-                else if (line.Contains("Raw Material Width")) data.RawWidth = double.Parse(Extract(line));
-                else if (line.Contains("Total No. Of Pierce")) data.TotalPierces = int.Parse(Extract(line));
-                else if (line.Contains("Material Cost")) data.MaterialCost = double.Parse(Extract(line));
-                else if (line.Contains("Total Cutting Dist.")) data.TotalCutDistance = double.Parse(Extract(line));
-                else if (line.TrimStart().StartsWith("1 ") && line.Contains("AL_"))
-                {
-                    var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 5 && int.TryParse(parts[^1], out int qty))
-                    {
-                        data.RawMaterialQuantity = qty;
-                    }
-                }
-            }
+                MaterialCode = GetValue("StockID"),
+                MaterialThickness = ParseDouble(GetValue("Thickness")),
+                FeedRate = ParseDouble(GetValue("FeedRate")),
+                PierceRateSec = ParseDouble(GetValue("PierceRate")),
+                RawLength = ParseDouble(GetValue("SheetX")),
+                RawWidth = ParseDouble(GetValue("SheetY")),
+                TotalPierces = ParseInt(GetValue("PierceCount")),
+                TotalCutDistance = ParseDouble(GetValue("CutDistance")),
+                RawMaterialQuantity = ParseInt(GetValue("NestQty")),
+                MaterialCost = ParseDouble(GetValue("MaterialCost")),
+                Density = ParseDouble(GetValue("Density")) // NEW
+            };
 
+            Console.WriteLine($"🧩 Parsed XML – Code: {data.MaterialCode}, Thickness: {data.MaterialThickness}, " +
+                              $"Density: {data.Density}, Cost/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}");
             return data;
         }
 
-        private static string Extract(string line)
-        {
-            var parts = line.Split(':');
-            return parts.Length > 1 ? parts[1].Trim() : string.Empty;
-        }
+        static double ParseDouble(string str) =>
+            double.TryParse(str, System.Globalization.NumberStyles.Any,
+                            System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0.0;
+
+        static int ParseInt(string str) =>
+            int.TryParse(str, out var i) ? i : 0;
     }
 }

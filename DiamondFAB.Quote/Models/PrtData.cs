@@ -18,5 +18,6 @@ namespace DiamondFAB.Quote.Models
         public double TotalCutDistance { get; set; } // In inches
         public int RawMaterialQuantity { get; set; }
         public double MaterialCost { get; set; }
+        public double Density { get; set; } // in lbs/in³
     }
 }

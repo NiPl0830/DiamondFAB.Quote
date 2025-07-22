@@ -51,7 +51,7 @@
                     <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat='Tax: {0:C}'}" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat='Total: {0:C}'}" FontWeight="Bold" FontSize="16"/>
                 </StackPanel>
-                <Button Content="Import .PRT" Command="{Binding ImportPrtFileCommand}" Width="120" Height="40"/>
+                <Button Content="Import .XML" Command="{Binding ImportXmlFilesCommand}" Width="120" Height="40"/>
                 <Button Content="Export PDF" Width="120" Height="40" Click="ExportPdfButton_Click"/>
             </StackPanel>
         </Grid>
