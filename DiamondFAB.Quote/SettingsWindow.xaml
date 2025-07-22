@@ -1,0 +1,47 @@
+﻿<Window x:Class="DiamondFAB.Quote.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="800" Width="600" WindowStartupLocation="CenterScreen">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+
+            <!-- Company Info -->
+            <TextBlock Text="Company Info" FontWeight="Bold" FontSize="16" />
+            <TextBlock Text="Company Name" FontWeight="SemiBold" Margin="0,10,0,0"/>
+            <TextBox x:Name="CompanyNameBox" Margin="0,5"/>
+
+            <TextBlock Text="Company Address" FontWeight="SemiBold" Margin="0,10,0,0"/>
+            <TextBox x:Name="CompanyAddressBox" Margin="0,5"/>
+
+            <TextBlock Text="Contact Email" FontWeight="SemiBold" Margin="0,10,0,0"/>
+            <TextBox x:Name="ContactEmailBox" Margin="0,5"/>
+
+            <!-- Rates -->
+            <TextBlock Text="Rates" FontWeight="Bold" FontSize="16" Margin="0,15,0,0"/>
+            <StackPanel Orientation="Horizontal" Margin="0,5">
+                <TextBlock Text="Hourly Laser Rate: $" VerticalAlignment="Center"/>
+                <TextBox x:Name="LaserRateBox" Width="100" Margin="5,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5">
+                <TextBlock Text="Tax Rate (%):" VerticalAlignment="Center"/>
+                <TextBox x:Name="TaxRateBox" Width="100" Margin="5,0"/>
+            </StackPanel>
+
+            <!-- Material Rates -->
+            <TextBlock Text="Material Rates" FontWeight="Bold" FontSize="16" Margin="0,15,0,0"/>
+            <DataGrid x:Name="MaterialGrid" AutoGenerateColumns="False" CanUserAddRows="True" Height="150" Margin="0,5">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Material Code" Binding="{Binding Key}" Width="*"/>
+                    <DataGridTextColumn Header="Rate ($/sq in)" Binding="{Binding Value}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Terms & Conditions -->
+            <TextBlock Text="Terms and Conditions" FontWeight="Bold" FontSize="16" Margin="0,15,0,0"/>
+            <TextBox x:Name="TermsBox" Height="100" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,5"/>
+
+            <!-- Save Button -->
+            <Button Content="Save Settings" Width="150" Height="40" HorizontalAlignment="Right" Margin="0,20,0,0" Click="SaveButton_Click"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
