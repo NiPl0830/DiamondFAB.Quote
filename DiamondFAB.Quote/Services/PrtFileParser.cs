@@ -3,6 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using DiamondFAB.Quote.Models;
+using System.Xml.Linq;
+using DiamondFAB.Quote.Models;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace DiamondFAB.Quote.Services
 {
@@ -36,6 +40,30 @@ namespace DiamondFAB.Quote.Services
             Console.WriteLine($"🧩 Parsed XML – Code: {data.MaterialCode}, Thickness: {data.MaterialThickness}, " +
                               $"Density: {data.Density}, Cost/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}");
             return data;
+        }
+        public static List<PartDetail> ParsePartDetails(string filePath)
+        {
+            var partDetails = new List<PartDetail>();
+            var doc = XDocument.Load(filePath);
+
+            var partElements = doc.Descendants("Parts");
+            foreach (var part in partElements)
+            {
+                string name = part.Element("Part")?.Value ?? "N/A";
+                int qty = int.TryParse(part.Element("PartQty")?.Value, out int q) ? q : 0;
+                double cutDistance = double.TryParse(part.Element("CutDistance")?.Value, out double c) ? c : 0.0;
+                double area = double.TryParse(part.Element("AreaT")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double a) ? a : 0.0;
+
+                partDetails.Add(new PartDetail
+                {
+                    Name = name,
+                    Quantity = qty,
+                    CutDistance = cutDistance,
+                    Area = area
+                });
+            }
+
+            return partDetails;
         }
 
         static double ParseDouble(string str) =>

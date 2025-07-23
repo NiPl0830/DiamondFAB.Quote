@@ -5,54 +5,78 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
         mc:Ignorable="d"
-        Title="DiamondFAB Quote" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+        Title="DiamondFAB Quote"
+        Height="500" Width="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="White"
+        AllowDrop="True"
+        DragEnter="Window_DragEnter"
+        Drop="Window_Drop">
 
     <Window.DataContext>
         <local:MainViewModel />
     </Window.DataContext>
 
     <DockPanel Margin="10">
-        <!-- ⚙️ Settings Button -->
+        <!-- Settings Button -->
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
-            <Button Content="⚙️ Settings" Width="100" Height="30" Margin="0,0,0,10"
-                    Click="SettingsButton_Click"/>
+            <Button Content="⚙️ Settings"
+                    Width="100" Height="30" Margin="0,0,0,10"
+                    Click="SettingsButton_Click"
+                    Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
-        <!-- Main UI Content -->
         <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="8*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,20"/>
+            <!-- Left Column: Title + Slogan -->
+            <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="DiamondFAB" FontSize="26" FontWeight="Bold" Foreground="#2E3B4E"/>
+                <TextBlock Text="QUOTE" FontSize="18" FontWeight="Bold" Foreground="Gray" Margin="0,-5,0,15"/>
+                <TextBlock Text="“Quoting jobs faster than your WiFi.”"
+                           FontSize="14" FontStyle="Italic" Foreground="#555"
+                           TextAlignment="Center" TextWrapping="Wrap" Width="160"/>
+            </StackPanel>
 
-            <!-- Line Items Table -->
-            <DataGrid Grid.Row="1" ItemsSource="{Binding LineItems}" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,10">
+            <!-- Quote Number -->
+            <TextBlock Grid.Column="1" Grid.Row="0"
+                       Text="{Binding CurrentQuote.QuoteNumber, StringFormat='Quote #: {0}'}"
+                       HorizontalAlignment="Left" Margin="10,0,0,5"
+                       FontSize="14" FontWeight="SemiBold" Foreground="DarkSlateGray"/>
+
+            <!-- DataGrid -->
+            <DataGrid Grid.Column="1" Grid.Row="1" ItemsSource="{Binding LineItems}"
+                      AutoGenerateColumns="False" CanUserAddRows="False" Margin="10"
+                      HeadersVisibility="Column" ColumnHeaderHeight="30"
+                      RowHeight="28" FontSize="14" IsReadOnly="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
-                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="Auto"/>
-                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="Auto"/>
-                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="Auto"/>
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="4*"/>
+                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="1*"/>
+                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="1.5*"/>
+                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="1.5*"/>
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- Footer: Totals + Import/Export Buttons -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <StackPanel.Resources>
-                    <Style TargetType="Button">
-                        <Setter Property="Margin" Value="5,0,0,0"/>
-                    </Style>
-                </StackPanel.Resources>
+            <!-- Footer -->
+            <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,20,10,0">
                 <StackPanel>
                     <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat='Subtotal: {0:C}'}" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat='Tax: {0:C}'}" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat='Total: {0:C}'}" FontWeight="Bold" FontSize="16"/>
                 </StackPanel>
-                <Button Content="Import .XML" Command="{Binding ImportXmlFilesCommand}" Width="120" Height="40"/>
-                <Button Content="Export PDF" Width="120" Height="40" Click="ExportPdfButton_Click"/>
+                <Button Content="Import .XML" Command="{Binding ImportXmlFilesCommand}"
+                        Width="120" Height="40" Margin="10,0,0,0"
+                        Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
+                <Button Content="Export PDF" Width="120" Height="40" Margin="5,0,0,0"
+                        Click="ExportPdfButton_Click" Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
             </StackPanel>
         </Grid>
     </DockPanel>

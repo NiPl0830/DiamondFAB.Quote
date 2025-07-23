@@ -7,9 +7,11 @@ namespace DiamondFAB.Quote.Models
 {
     public class Quote : INotifyPropertyChanged
     {
-        public string QuoteNumber { get; set; }
         public DateTime Date { get; set; } = DateTime.Now;
         public string CustomerName { get; set; }
+
+        // Formatted string like "Q-000123"
+        public string QuoteNumber { get; set; }
 
         private List<LineItem> _lineItems = new();
         public List<LineItem> LineItems
@@ -22,6 +24,12 @@ namespace DiamondFAB.Quote.Models
                 NotifyTotalsChanged();
             }
         }
+
+        // 🔧 New: Part-level quote detail breakdown for second PDF page
+        public List<PartDetail> PartDetails { get; set; } = new();
+
+        // 🔧 New: Needed for pricing logic in the exporter
+        public Settings AppSettings { get; set; }
 
         public double TaxRate { get; set; } = 0.0;
 

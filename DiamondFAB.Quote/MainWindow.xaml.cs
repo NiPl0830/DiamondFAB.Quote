@@ -57,6 +57,23 @@ namespace DiamondFAB.Quote
                 }
             }
         }
+        private void Window_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop)!;
+            var xmls = files.Where(f => f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (xmls.Length > 0 && DataContext is MainViewModel vm)
+            {
+                vm.ImportXmlFiles(xmls);
+            }
+        }
     }
 
 }

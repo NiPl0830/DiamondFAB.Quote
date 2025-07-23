@@ -17,5 +17,6 @@ namespace DiamondFAB.Quote.Models
         public Dictionary<string, double> MaterialRates { get; set; } = new(); // material code -> cost per square inch
         public string TermsAndConditions { get; set; }
         public string LogoPath { get; set; }
+        public int LastQuoteNumber { get; set; } = 1000; // starting point
     }
 }

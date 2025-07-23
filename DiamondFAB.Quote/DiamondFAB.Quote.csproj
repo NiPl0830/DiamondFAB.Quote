@@ -1,17 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>false</SelfContained>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="QuestPDF" Version="2025.7.0" />
-  </ItemGroup>
+	<ItemGroup>
+	  <None Remove="DiamondFAB Quote_Logo.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="QuestPDF" Version="2025.7.0" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.0.0-preview.112" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="runtimes\win-x64\native\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<Target Name="CopySkiaSharpNativeAssets" AfterTargets="Build">
+		<ItemGroup>
+			<NativeAssets Include="@(None-&gt;WithMetadataValue('CopyToOutputDirectory','PreserveNewest'))" />
+		</ItemGroup>
+		<Copy SourceFiles="@(NativeAssets)" DestinationFolder="$(OutDir)runtimes\win-x64\native\" SkipUnchangedFiles="true" />
+	</Target>
 
 </Project>
