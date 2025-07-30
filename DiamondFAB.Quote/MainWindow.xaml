@@ -18,10 +18,14 @@
     </Window.DataContext>
 
     <DockPanel Margin="10">
-        <!-- Settings Button -->
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
+        <!-- Settings + Clear Buttons -->
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right" Margin="0,0,0,10">
+            <Button Content="🧹 Clear"
+                    Width="100" Height="30" Margin="0,0,10,0"
+                    Click="ClearButton_Click"
+                    Background="#9B1B30" Foreground="White" FontWeight="Bold"/>
             <Button Content="⚙️ Settings"
-                    Width="100" Height="30" Margin="0,0,0,10"
+                    Width="100" Height="30"
                     Click="SettingsButton_Click"
                     Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
         </StackPanel>

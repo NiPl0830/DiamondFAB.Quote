@@ -92,39 +92,34 @@ namespace DiamondFAB.Quote.Services
                     });
 
                     // Page 2: Part-Level Breakdown
-                    if (quote.PartDetails?.Count > 0)
+                    // In container.Page(...) section after main summary:
+                    if (quote.PartDetails?.Any() == true)
                     {
-                        container.Page(page =>
-                        {
+                        container.Page(page => {
                             page.Margin(40);
                             page.Size(PageSizes.A4);
                             page.PageColor(Colors.White);
                             page.DefaultTextStyle(x => x.FontSize(12));
 
-                            page.Content().Column(col =>
-                            {
-                                col.Item().PaddingBottom(10).Text("🔍 Part-Level Cost Breakdown").Bold().FontSize(16);
+                            page.Content().Column(col => {
+                                col.Item().PaddingBottom(10)
+                                   .Text("Part-Level Cost Breakdown")
+                                   .Bold().FontSize(16);
 
-                                col.Item().Table(table =>
-                                {
-                                    table.ColumnsDefinition(columns =>
-                                    {
-                                        columns.RelativeColumn(3);  // Name
+                                col.Item().Table(table => {
+                                    table.ColumnsDefinition(columns => {
+                                        columns.RelativeColumn(5);  // Part name
                                         columns.ConstantColumn(50); // Qty
-                                        columns.ConstantColumn(60); // Cut"
-                                        columns.ConstantColumn(70); // Laser
-                                        columns.ConstantColumn(70); // Mat
                                         columns.ConstantColumn(80); // Total
                                     });
 
-                                    table.Header(header =>
-                                    {
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Part").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignCenter().Text("Qty").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Cut\"").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Laser").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Mat").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Total").Bold();
+                                    table.Header(header => {
+                                        header.Cell().Background(Colors.Grey.Lighten3)
+                                              .Padding(5).Text("Part").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten3)
+                                              .Padding(5).AlignCenter().Text("Qty").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten3)
+                                              .Padding(5).AlignRight().Text("Total").Bold();
                                     });
 
                                     bool even = false;
@@ -133,12 +128,12 @@ namespace DiamondFAB.Quote.Services
                                         even = !even;
                                         var bg = even ? Colors.White : Colors.Grey.Lighten5;
 
-                                        table.Cell().Background(bg).Padding(4).Text(part.Name);
-                                        table.Cell().Background(bg).Padding(4).AlignCenter().Text(part.Quantity.ToString());
-                                        table.Cell().Background(bg).Padding(4).AlignRight().Text(part.CutDistance.ToString("F2"));
-                                        table.Cell().Background(bg).Padding(4).AlignRight().Text(part.LaserCost.ToString("C", CultureInfo.CurrentCulture));
-                                        table.Cell().Background(bg).Padding(4).AlignRight().Text(part.MaterialCost.ToString("C", CultureInfo.CurrentCulture));
-                                        table.Cell().Background(bg).Padding(4).AlignRight().Text(part.TotalCost.ToString("C", CultureInfo.CurrentCulture));
+                                        table.Cell().Background(bg).Padding(4)
+                                              .Text(part.Name);
+                                        table.Cell().Background(bg).Padding(4)
+                                              .AlignCenter().Text(part.Quantity.ToString());
+                                        table.Cell().Background(bg).Padding(4)
+                                              .AlignRight().Text(part.TotalCost.ToString("C", CultureInfo.CurrentCulture));
                                     }
                                 });
                             });

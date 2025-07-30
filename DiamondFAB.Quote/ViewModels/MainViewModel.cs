@@ -103,7 +103,7 @@ namespace DiamondFAB.Quote.ViewModels
                 CurrentQuote.LineItems.Add(laserItem);
                 CurrentQuote.LineItems.Add(materialItem);
 
-                // 👇 Add part-level detail parsing
+                // 👇 Compute part-level costs
                 var partList = XmlFileParser.ParsePartDetails(file);
 
                 if (CurrentQuote.PartDetails == null)
@@ -111,10 +111,15 @@ namespace DiamondFAB.Quote.ViewModels
 
                 foreach (var part in partList)
                 {
+                    double hoursPerPart = (part.CutDistance / feed) / 60.0;
+                    part.LaserCost = Math.Round(hoursPerPart * AppSettings.HourlyLaserRate * part.Quantity, 2);
+
+                    double materialArea = part.Area * data.MaterialThickness;
+                    double weightPerPart = materialArea * data.Density;
+                    part.MaterialCost = Math.Round(weightPerPart * data.MaterialCost * part.Quantity, 2);
+
                     CurrentQuote.PartDetails.Add(part);
                 }
-
-                MessageBox.Show($"DEBUG: PartDetails count = {CurrentQuote.PartDetails?.Count}", "Debug Info", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             CurrentQuote.TaxRate = AppSettings.TaxRate;

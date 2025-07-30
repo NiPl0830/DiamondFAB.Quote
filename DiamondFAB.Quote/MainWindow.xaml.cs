@@ -74,6 +74,13 @@ namespace DiamondFAB.Quote
                 vm.ImportXmlFiles(xmls);
             }
         }
+        private void ClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.StartNewQuoteCommand.Execute(null);
+            }
+        }
     }
 
 }
