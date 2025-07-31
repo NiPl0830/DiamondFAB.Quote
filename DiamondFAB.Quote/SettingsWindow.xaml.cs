@@ -2,6 +2,7 @@
 using DiamondFAB.Quote.Services;
 using DiamondFAB.Quote.ViewModels;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -19,8 +20,13 @@ namespace DiamondFAB.Quote
 
         private async void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Load settings in background
             var settings = await Task.Run(SettingsService.Load);
             ApplySettings(settings);
+
+            // Display version label safely after initialization
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "N/A";
+            VersionTextBlock.Text = $"Version: {version}";
         }
 
         private void ApplySettings(Settings settings)
