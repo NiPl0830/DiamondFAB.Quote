@@ -6,82 +6,363 @@
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
         mc:Ignorable="d"
         Title="DiamondFAB Quote"
-        Height="500" Width="1100"
+        Height="640" Width="1180"
         WindowStartupLocation="CenterScreen"
-        Background="White"
+        Background="{DynamicResource App.Background}"
         AllowDrop="True"
         DragEnter="Window_DragEnter"
         Drop="Window_Drop">
 
+    <!-- DataContext -->
     <Window.DataContext>
         <local:MainViewModel />
     </Window.DataContext>
 
-    <DockPanel Margin="10">
-        <!-- Settings + Clear Buttons -->
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <Button Content="🧹 Clear"
-                    Width="100" Height="30" Margin="0,0,10,0"
-                    Click="ClearButton_Click"
-                    Background="#9B1B30" Foreground="White" FontWeight="Bold"/>
-            <Button Content="⚙️ Settings"
-                    Width="100" Height="30"
-                    Click="SettingsButton_Click"
-                    Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
-        </StackPanel>
+    <!-- THEME & TOKENS -->
+    <Window.Resources>
+        <!-- Color palette (light). -->
+        <SolidColorBrush x:Key="App.Background" Color="#F6F8FB"/>
+        <SolidColorBrush x:Key="App.Surface" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="App.Border" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="App.BorderStrong" Color="#CBD5E1"/>
+        <!-- Your custom text colors -->
+        <SolidColorBrush x:Key="App.Text" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="App.TextSecondary" Color="#0F172A"/>
+        <SolidColorBrush x:Key="Brand.Primary" Color="#2E3B4E"/>
+        <SolidColorBrush x:Key="Brand.PrimaryHover" Color="#3A4A64"/>
+        <SolidColorBrush x:Key="Brand.Danger" Color="#9B1B30"/>
+        <SolidColorBrush x:Key="Brand.DangerHover" Color="#B0213A"/>
 
-        <Grid>
+        <!-- Accent = red for diamond -->
+        <SolidColorBrush x:Key="Accent" Color="#9B1B30"/>
+
+        <!-- Typography -->
+        <FontFamily x:Key="App.Font">Segoe UI</FontFamily>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource App.Font}"/>
+            <Setter Property="Foreground" Value="{StaticResource App.Text}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <!-- Card -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource App.Surface}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="BorderBrush" Value="{StaticResource App.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="1" BlurRadius="12" Opacity="0.18"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Buttons -->
+        <Style TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource App.Font}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                BorderThickness="1"
+                                BorderBrush="#00000010">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="14" Opacity="0.18"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource Brand.Primary}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource Brand.Danger}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Inputs -->
+        <Style TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource App.Font}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="BorderBrush" Value="{StaticResource App.BorderStrong}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" CornerRadius="8"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Brand.Primary}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid -->
+        <Style TargetType="DataGrid">
+            <Setter Property="FontFamily" Value="{StaticResource App.Font}"/>
+            <Setter Property="Background" Value="{StaticResource App.Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource App.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowHeight" Value="32"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F1F5F9"/>
+            <Setter Property="Foreground" Value="{StaticResource App.TextSecondary}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="RowBd" Background="{TemplateBinding Background}" CornerRadius="8" Margin="2">
+                            <SelectiveScrollingGrid>
+                                <SelectiveScrollingGrid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </SelectiveScrollingGrid.ColumnDefinitions>
+                                <SelectiveScrollingGrid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </SelectiveScrollingGrid.RowDefinitions>
+                                <DataGridCellsPresenter Grid.Column="1"/>
+                                <DataGridDetailsPresenter Grid.Column="1" Grid.Row="1" Visibility="Collapsed"/>
+                            </SelectiveScrollingGrid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="#0F172A0A"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="#2E3B4E15"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Headings -->
+        <Style x:Key="Overline" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource App.TextSecondary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="H1" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Brand.Primary}"/>
+        </Style>
+        <Style x:Key="H2" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource App.TextSecondary}"/>
+        </Style>
+
+        <!-- Red diamond: stronger gradient, facets, stroke, highlight -->
+        <LinearGradientBrush x:Key="Logo.Fill" StartPoint="0,0" EndPoint="1,1">
+            <!-- deeper start and darker end for contrast -->
+            <GradientStop Color="#D1354A" Offset="0"/>
+            <GradientStop Color="#5A0C18" Offset="1"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="Logo.Stroke" Color="#3F0912"/>
+        <SolidColorBrush x:Key="Logo.FacetDark" Color="#7B0F20"/>
+        <SolidColorBrush x:Key="Logo.FacetMid" Color="#A9182E"/>
+        <SolidColorBrush x:Key="Logo.FacetLight" Color="#E0495C"/>
+        <!-- glossy highlight (radial) -->
+        <RadialGradientBrush x:Key="Logo.Highlight" GradientOrigin="0.25,0.15" Center="0.25,0.15" RadiusX="0.55" RadiusY="0.55">
+            <GradientStop Color="#FFFFFF" Offset="0" />
+            <GradientStop Color="#FFFFFF" Offset="0.25" />
+            <GradientStop Color="#FFFFFF00" Offset="1" />
+        </RadialGradientBrush>
+    </Window.Resources>
+
+    <!-- LAYOUT -->
+    <DockPanel Margin="16">
+        <!-- Top bar -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource App.Surface}" CornerRadius="12" Padding="12" BorderBrush="{StaticResource App.Border}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource H1}" Text="DiamondFAB"/>
+                    <TextBlock Style="{StaticResource H2}" Text="QUOTE" Margin="8,4,0,0"/>
+                    <TextBlock Style="{StaticResource Overline}" Text="'Quoting jobs faster than your Wi-Fi'" Margin="8,6,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource DangerButton}" Click="ClearButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🧹" Margin="0,0,6,0"/>
+                            <TextBlock Text="Clear"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource PrimaryButton}" Click="SettingsButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙" Margin="0,0,6,0"/>
+                            <TextBlock Text="Settings"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Body -->
+        <Grid Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="8*"/>
+                <ColumnDefinition Width="2.2*"/>
+                <ColumnDefinition Width="7.8*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Left Column: Title + Slogan -->
-            <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="DiamondFAB" FontSize="26" FontWeight="Bold" Foreground="#2E3B4E"/>
-                <TextBlock Text="QUOTE" FontSize="18" FontWeight="Bold" Foreground="Gray" Margin="0,-5,0,15"/>
-                <TextBlock Text="“Quoting jobs faster than your WiFi.”"
-                           FontSize="14" FontStyle="Italic" Foreground="#555"
-                           TextAlignment="Center" TextWrapping="Wrap" Width="160"/>
-            </StackPanel>
+            <!-- Logo with Red Diamond -->
+            <Border Grid.RowSpan="3" Margin="0,0,12,0" Style="{StaticResource Card}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="200">
+                    <!-- Red Diamond -->
+                    <Viewbox Width="80" Height="80" Margin="0,0,0,12">
+                        <Canvas Width="100" Height="100">
+                            <!-- Main red diamond -->
+                            <Polygon Points="50,0 100,50 50,100 0,50">
+                                <Polygon.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <!-- Deep ruby tones -->
+                                        <GradientStop Color="#990000" Offset="0"/>
+                                        <GradientStop Color="#CC0000" Offset="0.5"/>
+                                        <GradientStop Color="#660000" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Polygon.Fill>
+                            </Polygon>
 
-            <!-- Quote Number -->
-            <TextBlock Grid.Column="1" Grid.Row="0"
-                       Text="{Binding CurrentQuote.QuoteNumber, StringFormat='Quote #: {0}'}"
-                       HorizontalAlignment="Left" Margin="10,0,0,5"
-                       FontSize="14" FontWeight="SemiBold" Foreground="DarkSlateGray"/>
+                            <!-- Facet highlight -->
+                            <Polygon Points="50,0 100,50 50,50 0,50" Opacity="0.15">
+                                <Polygon.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="White" Offset="0"/>
+                                        <GradientStop Color="#FFEEEE" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Polygon.Fill>
+                            </Polygon>
+
+                            <!-- Inner shadow for depth -->
+                            <Polygon Points="50,50 100,50 50,100 0,50" Opacity="0.25">
+                                <Polygon.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#000000" Offset="0"/>
+                                        <GradientStop Color="#440000" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Polygon.Fill>
+                            </Polygon>
+                        </Canvas>
+                    </Viewbox>
+
+                    <!-- App name -->
+                    <TextBlock Text="DiamondFAB" Style="{StaticResource H1}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="QUOTE" Style="{StaticResource H2}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
 
             <!-- DataGrid -->
-            <DataGrid Grid.Column="1" Grid.Row="1" ItemsSource="{Binding LineItems}"
-                      AutoGenerateColumns="False" CanUserAddRows="False" Margin="10"
-                      HeadersVisibility="Column" ColumnHeaderHeight="30"
-                      RowHeight="28" FontSize="14" IsReadOnly="True">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="4*"/>
-                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="1*"/>
-                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="1.5*"/>
-                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="1.5*"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Border Grid.Column="1" Grid.Row="0" Style="{StaticResource Card}" Padding="8">
+                <DataGrid ItemsSource="{Binding LineItems}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          ColumnHeaderHeight="34"
+                          RowHeight="34"
+                          AlternationCount="2"
+                          AlternatingRowBackground="#00000003">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="4*"/>
+                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="1*"/>
+                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="1.5*"/>
+                        <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="1.5*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
 
             <!-- Footer -->
-            <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,20,10,0">
-                <StackPanel>
-                    <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat='Subtotal: {0:C}'}" FontSize="14"/>
-                    <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat='Tax: {0:C}'}" FontSize="14"/>
-                    <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat='Total: {0:C}'}" FontWeight="Bold" FontSize="16"/>
+            <Grid Grid.Column="1" Grid.Row="1" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Totals -->
+                <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat=Subtotal: {0:C}}" 
+                   Foreground="{StaticResource App.TextSecondary}"/>
+                        <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat=Tax: {0:C}}" 
+                   Foreground="{StaticResource App.TextSecondary}"/>
+                        <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat=Total: {0:C}}" 
+                   FontWeight="Bold" 
+                   FontSize="16" 
+                   Foreground="{StaticResource App.TextSecondary}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding ImportXmlFilesCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⬆" Margin="0,0,6,0"/>
+                            <TextBlock Text="Import .XML"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource PrimaryButton}" Click="ExportPdfButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🧾" Margin="0,0,6,0"/>
+                            <TextBlock Text="Export PDF"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
-                <Button Content="Import .XML" Command="{Binding ImportXmlFilesCommand}"
-                        Width="120" Height="40" Margin="10,0,0,0"
-                        Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
-                <Button Content="Export PDF" Width="120" Height="40" Margin="5,0,0,0"
-                        Click="ExportPdfButton_Click" Background="#2E3B4E" Foreground="White" FontWeight="Bold"/>
-            </StackPanel>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>
