@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
         mc:Ignorable="d"
-        Title="DiamondFAB Quote"
+        Title="{Binding AppTitle}"
         Height="640" Width="1180"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource App.Background}"

@@ -3,7 +3,11 @@ using CommunityToolkit.Mvvm.Input;
 using DiamondFAB.Quote.Models;
 using DiamondFAB.Quote.Services;
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Reflection;
 using System.Windows;
 using QuoteModel = DiamondFAB.Quote.Models.Quote;
 
@@ -11,8 +15,9 @@ namespace DiamondFAB.Quote.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
+        // Bind your Window Title to this: Title="{Binding AppTitle}"
         [ObservableProperty]
-        private string title = "DiamondFAB Quote";
+        private string appTitle;
 
         [ObservableProperty]
         private QuoteModel currentQuote = new();
@@ -25,6 +30,28 @@ namespace DiamondFAB.Quote.ViewModels
 
         public MainViewModel()
         {
+            // Prefer informational version, trim +metadata and -pre-release
+            var infoVersion = Assembly
+                .GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion;
+
+            string version;
+            if (!string.IsNullOrWhiteSpace(infoVersion))
+            {
+                version = infoVersion;
+                int plus = version.IndexOf('+');
+                if (plus >= 0) version = version.Substring(0, plus);
+                int dash = version.IndexOf('-');
+                if (dash >= 0) version = version.Substring(0, dash);
+            }
+            else
+            {
+                version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+            }
+
+            AppTitle = $"DiamondFAB Quote v{version}";
+
             AppSettings = SettingsService.Load();
             CurrentQuote.TaxRate = AppSettings.TaxRate;
             CurrentQuote.QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber();
@@ -41,6 +68,7 @@ namespace DiamondFAB.Quote.ViewModels
         {
             LineItems.Clear();
             PartDetails.Clear();
+
             CurrentQuote = new QuoteModel
             {
                 TaxRate = AppSettings.TaxRate,
@@ -72,17 +100,20 @@ namespace DiamondFAB.Quote.ViewModels
                 var data = XmlFileParser.Parse(file);
 
                 int qty = Math.Max(1, data.RawMaterialQuantity);
-                double feed = data.FeedRate > 0 ? data.FeedRate : 1;
-                double timeCutMin = data.TotalCutDistance / feed;
-                double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0;
+
+                // --- Laser time ---
+                double feed = data.FeedRate > 0 ? data.FeedRate : 1;         // in/min (guard against 0)
+                double timeCutMin = data.TotalCutDistance / feed;            // minutes
+                double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
                 double totalHours = (timeCutMin + timePierceMin) / 60.0 * qty;
 
                 double laserCost = Math.Round(AppSettings.HourlyLaserRate * totalHours, 2);
 
-                double volumePerSheet = data.RawLength * data.RawWidth * data.MaterialThickness;
-                double weightPerSheet = volumePerSheet * data.Density;
-                double totalWeight = weightPerSheet * qty;
-                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);
+                // --- Material cost (volume * density * $/lb) ---
+                double volumePerSheet = data.RawLength * data.RawWidth * data.MaterialThickness; // in^3
+                double weightPerSheet = volumePerSheet * data.Density;                            // lbs
+                double totalWeight = weightPerSheet * qty;                                        // lbs
+                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);             // $/lb
 
                 var laserItem = new LineItem
                 {
@@ -103,19 +134,20 @@ namespace DiamondFAB.Quote.ViewModels
                 CurrentQuote.LineItems.Add(laserItem);
                 CurrentQuote.LineItems.Add(materialItem);
 
-                // 👇 Compute part-level costs
+                // --- Part-level details (for page 2 of PDF) ---
                 var partList = XmlFileParser.ParsePartDetails(file);
-
                 if (CurrentQuote.PartDetails == null)
                     CurrentQuote.PartDetails = new List<PartDetail>();
 
                 foreach (var part in partList)
                 {
+                    // Laser cost per part (cut distance only, hours)
                     double hoursPerPart = (part.CutDistance / feed) / 60.0;
                     part.LaserCost = Math.Round(hoursPerPart * AppSettings.HourlyLaserRate * part.Quantity, 2);
 
-                    double materialArea = part.Area * data.MaterialThickness;
-                    double weightPerPart = materialArea * data.Density;
+                    // Material cost per part (area * thickness * density * $/lb)
+                    double partVolume = part.Area * data.MaterialThickness; // in^3
+                    double weightPerPart = partVolume * data.Density;       // lbs
                     part.MaterialCost = Math.Round(weightPerPart * data.MaterialCost * part.Quantity, 2);
 
                     CurrentQuote.PartDetails.Add(part);
