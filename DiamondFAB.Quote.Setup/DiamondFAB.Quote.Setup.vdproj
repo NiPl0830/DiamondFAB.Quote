@@ -19,6 +19,12 @@
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
+        "Entry"
+        {
+        "MsmKey" = "8:_D9B2CFD5470946618FF0FAB7D8B91EB5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -27,7 +33,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\DiamondFAB_Quote - v1.0.1.msi"
+        "OutputFilename" = "8:Debug\\DiamondFAB_Quote - v1.1.1.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -116,6 +122,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D9B2CFD5470946618FF0FAB7D8B91EB5"
+            {
+            "SourcePath" = "8:..\\DiamondFAB.Quote\\Assets\\DiamondFAB_Quote_Logo.ico"
+            "TargetName" = "8:DiamondFAB_Quote_Logo.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_E6302192854F4D72BF7A4EBD100FD691"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -172,15 +198,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:DiamondFAB Quote"
-        "ProductCode" = "8:{25B8CACA-030E-4FEE-81BD-4E4C40988C29}"
-        "PackageCode" = "8:{EAADE7E8-FA55-478E-9431-A75A556DA884}"
+        "ProductCode" = "8:{9FAC5B82-16B6-4CAF-B099-9923CDF18A8D}"
+        "PackageCode" = "8:{EB84365B-2751-4CF0-A80B-83BDF6E71796}"
         "UpgradeCode" = "8:{DF53F953-DC0F-412A-9DD8-EAEA42A48E80}"
         "AspNetVersion" = "8:"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.1"
+        "ProductVersion" = "8:1.1.1"
         "Manufacturer" = "8:Nick Plourde"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -190,7 +216,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:"
         "ARPURLINFOABOUT" = "8:"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_D9B2CFD5470946618FF0FAB7D8B91EB5"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -293,6 +319,34 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_95795875B9ED40599886FA5A5498D64A"
+            {
+            "Name" = "8:DiamondFAB Quote"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_116B6EBA585C474CAB4EF9B55026BED0"
+            "Folder" = "8:_92FBA7D294A84A948E239F4ACD41142F"
+            "WorkingFolder" = "8:_E6302192854F4D72BF7A4EBD100FD691"
+            "Icon" = "8:_D9B2CFD5470946618FF0FAB7D8B91EB5"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_9B8F774834394200A256C5B65AE2563E"
+            {
+            "Name" = "8:DiamondFAB Quote"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_116B6EBA585C474CAB4EF9B55026BED0"
+            "Folder" = "8:_A8378E3175BE420E919FBD9D44916502"
+            "WorkingFolder" = "8:_E6302192854F4D72BF7A4EBD100FD691"
+            "Icon" = "8:_D9B2CFD5470946618FF0FAB7D8B91EB5"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {

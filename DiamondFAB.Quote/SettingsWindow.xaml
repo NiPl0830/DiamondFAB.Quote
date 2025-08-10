@@ -5,58 +5,256 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Settings"
-        Height="550"
-        Width="600"
-        WindowStartupLocation="CenterScreen">
+        Height="600"
+        Width="700"
+        MinHeight="520"
+        MinWidth="620"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F1115">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+    <!-- THEME + STYLES -->
+    <Window.Resources>
+        <!-- Palette -->
+        <SolidColorBrush x:Key="BgBrush"               Color="#0F1115"/>
+        <SolidColorBrush x:Key="CardBrush"             Color="#181B22"/>
+        <SolidColorBrush x:Key="CardBorderBrush"       Color="#242937"/>
+        <SolidColorBrush x:Key="AccentBrush"           Color="#4C8DF6"/>
+        <SolidColorBrush x:Key="AccentBrushHover"      Color="#6EA2FF"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush"      Color="#E9EDF5"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush"    Color="#AAB2C5"/>
+        <SolidColorBrush x:Key="InputBgBrush"          Color="#111319"/>
+        <SolidColorBrush x:Key="InputBorderBrush"      Color="#2A3040"/>
+        <SolidColorBrush x:Key="InputBorderHoverBrush" Color="#3B4358"/>
+        <SolidColorBrush x:Key="DividerBrush"          Color="#232838"/>
 
-            <!-- Company Info -->
-            <TextBlock Text="Company Info" FontWeight="Bold" FontSize="16"/>
-            <TextBlock Text="Company Name" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <TextBox x:Name="CompanyNameBox" Margin="0,5"/>
+        <!-- Typography -->
+        <Style x:Key="H1" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
 
-            <TextBlock Text="Company Address" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <TextBox x:Name="CompanyAddressBox" Margin="0,5"/>
+        <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource H1}">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
 
-            <TextBlock Text="Contact Email" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <TextBox x:Name="ContactEmailBox" Margin="0,5"/>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,14,0,6"/>
+        </Style>
 
-            <!-- Rates -->
-            <TextBlock Text="Rates" FontWeight="Bold" FontSize="16" Margin="0,15,0,0"/>
-            <StackPanel Orientation="Horizontal" Margin="0,5">
-                <TextBlock Text="Hourly Laser Rate: $" VerticalAlignment="Center"/>
-                <TextBox x:Name="LaserRateBox" Width="100" Margin="5,0"/>
+        <!-- Card container -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.18"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded TextBox -->
+        <Style x:Key="ModernTextBox" TargetType="{x:Type TextBox}">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="{StaticResource InputBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Multiline TextBox variant -->
+        <Style x:Key="ModernMultilineTextBox" TargetType="{x:Type TextBox}" BasedOn="{StaticResource ModernTextBox}">
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Height" Value="140"/>
+        </Style>
+
+        <!-- Primary Button -->
+        <Style TargetType="Button" x:Key="PrimaryButton">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="MinWidth" Value="150"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="10" Background="{TemplateBinding Background}">
+                            <ContentPresenter Margin="10,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBrushHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Divider line -->
+        <Style x:Key="Divider" TargetType="Separator">
+            <Setter Property="Margin" Value="0,16,0,16"/>
+            <Setter Property="Background" Value="{StaticResource DividerBrush}"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Background="{TemplateBinding Background}" Height="{TemplateBinding Height}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource BgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="20">
+            <DockPanel>
+                <TextBlock Text="Settings" Style="{StaticResource H1}" DockPanel.Dock="Left"/>
+                <TextBlock Text="Configure company info, rates, and terms." 
+                           Foreground="{StaticResource TextSecondaryBrush}" 
+                           Margin="16,2,0,0" DockPanel.Dock="Left"/>
+            </DockPanel>
+        </Border>
+
+        <!-- CONTENT -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
+
+                <!-- Company Info Card -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.ColumnSpan="2" Text="Company Info" Style="{StaticResource SectionTitle}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Company Name" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="CompanyNameBox" Style="{StaticResource ModernTextBox}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Company Address" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="CompanyAddressBox" Style="{StaticResource ModernTextBox}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Contact Email" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="ContactEmailBox" Style="{StaticResource ModernTextBox}" />
+                    </Grid>
+                </Border>
+
+                <!-- Rates Card -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.ColumnSpan="2" Text="Rates" Style="{StaticResource SectionTitle}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Hourly Laser Rate ($/hr)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="LaserRateBox" Style="{StaticResource ModernTextBox}" Width="180" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Tax Rate (%)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="TaxRateBox" Style="{StaticResource ModernTextBox}" Width="180" />
+                    </Grid>
+                </Border>
+
+                <!-- Terms & Conditions Card -->
+                <Border Style="{StaticResource Card}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Terms &amp; Conditions" Style="{StaticResource SectionTitle}"/>
+                        <TextBox x:Name="TermsBox" Grid.Row="1" Style="{StaticResource ModernMultilineTextBox}"/>
+                    </Grid>
+                </Border>
+
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,5">
-                <TextBlock Text="Tax Rate (%):" VerticalAlignment="Center"/>
-                <TextBox x:Name="TaxRateBox" Width="100" Margin="5,0"/>
-            </StackPanel>
+        </ScrollViewer>
 
-            <!-- Terms & Conditions -->
-            <TextBlock Text="Terms and Conditions" FontWeight="Bold" FontSize="16" Margin="0,15,0,0"/>
-            <TextBox x:Name="TermsBox" Height="100" AcceptsReturn="True" TextWrapping="Wrap" Margin="0,5"/>
-
-            <!-- Footer -->
-            <DockPanel Margin="0,20,0,0">
-                <!-- Version Display Left -->
+        <!-- FOOTER -->
+        <Border Grid.Row="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="16">
+            <DockPanel LastChildFill="False">
                 <TextBlock x:Name="VersionTextBlock"
                            DockPanel.Dock="Left"
                            VerticalAlignment="Center"
                            FontSize="12"
-                           Foreground="Gray"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            Text="Version: Loading..." />
-
-                <!-- Save Button Right -->
-                <Button Content="Save Settings"
-                        Width="150"
-                        Height="40"
-                        DockPanel.Dock="Right"
-                        HorizontalAlignment="Right"
-                        Click="SaveButton_Click"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Save Settings" Style="{StaticResource PrimaryButton}" Click="SaveButton_Click"/>
+                </StackPanel>
             </DockPanel>
-
-        </StackPanel>
-    </ScrollViewer>
+        </Border>
+    </Grid>
 </Window>
