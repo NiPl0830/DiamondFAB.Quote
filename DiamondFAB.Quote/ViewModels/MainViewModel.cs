@@ -93,6 +93,16 @@ namespace DiamondFAB.Quote.ViewModels
             ImportXmlFiles(dialog.FileNames);
         }
 
+        // Pretty "Xh Ym" formatting for minute values
+        private static string FormatMinutes(double minutes)
+        {
+            if (minutes <= 0) return "0m";
+            var total = Math.Round(minutes);  // whole minutes
+            int h = (int)(total / 60);
+            int m = (int)(total % 60);
+            return h > 0 ? $"{h}h {m}m" : $"{m}m";
+        }
+
         public void ImportXmlFiles(string[] filePaths)
         {
             foreach (var file in filePaths)
@@ -101,11 +111,19 @@ namespace DiamondFAB.Quote.ViewModels
 
                 int qty = Math.Max(1, data.RawMaterialQuantity);
 
-                // --- Laser time ---
-                double feed = data.FeedRate > 0 ? data.FeedRate : 1;         // in/min (guard against 0)
-                double timeCutMin = data.TotalCutDistance / feed;            // minutes
-                double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
-                double totalHours = (timeCutMin + timePierceMin) / 60.0 * qty;
+                // --- Laser time: prefer <ProcessTime> (minutes) from <Nest>, else fallback to legacy calc ---
+                double perSheetMinutes = data.ProcessTimeMinutes;  // <-- new field from XML
+                if (perSheetMinutes <= 0)
+                {
+                    double feed = data.FeedRate > 0 ? data.FeedRate : 1;                 // in/min
+                    double timeCutMin = data.TotalCutDistance / feed;                    // minutes
+                    double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
+                    perSheetMinutes = timeCutMin + timePierceMin;
+                }
+
+                double totalMinutes = perSheetMinutes * qty;
+                double totalHours = totalMinutes / 60.0;
+                string humanTime = FormatMinutes(totalMinutes);
 
                 double laserCost = Math.Round(AppSettings.HourlyLaserRate * totalHours, 2);
 
@@ -117,7 +135,7 @@ namespace DiamondFAB.Quote.ViewModels
 
                 var laserItem = new LineItem
                 {
-                    Description = $"{data.MaterialCode} – Laser Time ({Math.Round(totalHours, 2)} hrs)",
+                    Description = $"{data.MaterialCode} – Laser Time ({humanTime})",
                     Quantity = 1,
                     UnitPrice = laserCost
                 };
@@ -139,13 +157,16 @@ namespace DiamondFAB.Quote.ViewModels
                 if (CurrentQuote.PartDetails == null)
                     CurrentQuote.PartDetails = new List<PartDetail>();
 
+                // Keep part-level laser calc based on per-part cut distance (feed fallback from file)
+                double feedForParts = data.FeedRate > 0 ? data.FeedRate : 1; // in/min
                 foreach (var part in partList)
                 {
-                    // Laser cost per part (cut distance only, hours)
-                    double hoursPerPart = (part.CutDistance / feed) / 60.0;
+                    // inches / (in/min) = minutes
+                    double minutesPerPart = part.CutDistance / feedForParts;
+                    double hoursPerPart = minutesPerPart / 60.0;
+
                     part.LaserCost = Math.Round(hoursPerPart * AppSettings.HourlyLaserRate * part.Quantity, 2);
 
-                    // Material cost per part (area * thickness * density * $/lb)
                     double partVolume = part.Area * data.MaterialThickness; // in^3
                     double weightPerPart = partVolume * data.Density;       // lbs
                     part.MaterialCost = Math.Round(weightPerPart * data.MaterialCost * part.Quantity, 2);

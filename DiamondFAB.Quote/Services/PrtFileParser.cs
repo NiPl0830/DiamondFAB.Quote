@@ -22,6 +22,9 @@ namespace DiamondFAB.Quote.Services
             string GetValue(string tagName) =>
                 doc.Descendants(tagName).FirstOrDefault()?.Value.Trim() ?? string.Empty;
 
+            // 👇 Grab the <Nest> block so we can read its ProcessTime specifically
+            var nest = doc.Descendants("Nest").FirstOrDefault();
+
             var data = new PrtData
             {
                 MaterialCode = GetValue("StockID"),
@@ -34,11 +37,17 @@ namespace DiamondFAB.Quote.Services
                 TotalCutDistance = ParseDouble(GetValue("CutDistance")),
                 RawMaterialQuantity = ParseInt(GetValue("NestQty")),
                 MaterialCost = ParseDouble(GetValue("MaterialCost")),
-                Density = ParseDouble(GetValue("Density")) // NEW
+                Density = ParseDouble(GetValue("Density")),
+
+                // ✅ NEW: decimal minutes from <Nest><ProcessTime> (fallback to any ProcessTime tag if needed)
+                ProcessTimeMinutes = nest != null
+                                        ? ParseDouble(nest.Element("ProcessTime")?.Value)
+                                        : ParseDouble(GetValue("ProcessTime"))
             };
 
             Console.WriteLine($"🧩 Parsed XML – Code: {data.MaterialCode}, Thickness: {data.MaterialThickness}, " +
-                              $"Density: {data.Density}, Cost/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}");
+                              $"Density: {data.Density}, $/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}, " +
+                              $"ProcessTime(min): {data.ProcessTimeMinutes}");
             return data;
         }
         public static List<PartDetail> ParsePartDetails(string filePath)
