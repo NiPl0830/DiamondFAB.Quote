@@ -11,7 +11,7 @@ namespace DiamondFAB.Quote
 {
     public partial class SettingsWindow : Window
     {
-        private Settings _settings;
+        private Settings _settings = new();
 
         public SettingsWindow()
         {
@@ -21,12 +21,20 @@ namespace DiamondFAB.Quote
 
         private async void SettingsWindow_Loaded(object? sender, RoutedEventArgs e)
         {
-            // show version in footer
-            var version = Assembly.GetExecutingAssembly()
-                                  .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                                  .InformationalVersion
-                           ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
-                           ?? "1.0.0";
+            // show version in footer (trim +build and -pre-release)
+            string version = Assembly
+                .GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion
+                ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                ?? "1.0.0";
+
+            // strip "+metadata" and "-prerelease" if present
+            int plus = version.IndexOf('+');
+            if (plus >= 0) version = version.Substring(0, plus);
+            int dash = version.IndexOf('-');
+            if (dash >= 0) version = version.Substring(0, dash);
+
             VersionTextBlock.Text = $"Version: {version}";
 
             // load settings asynchronously

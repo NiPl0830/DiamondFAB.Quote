@@ -31,7 +31,7 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="QuestPDF" Version="2025.7.0" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.0.0-preview.112" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.116.0-preview.6.1" />
 	</ItemGroup>
 
 	<ItemGroup>

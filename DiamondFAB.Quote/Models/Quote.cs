@@ -8,10 +8,10 @@ namespace DiamondFAB.Quote.Models
     public class Quote : INotifyPropertyChanged
     {
         public DateTime Date { get; set; } = DateTime.Now;
-        public string CustomerName { get; set; }
+        public string? CustomerName { get; set; }
 
         // Formatted string like "Q-000123"
-        public string QuoteNumber { get; set; }
+        public string? QuoteNumber { get; set; }
 
         private List<LineItem> _lineItems = new();
         public List<LineItem> LineItems
@@ -29,7 +29,7 @@ namespace DiamondFAB.Quote.Models
         public List<PartDetail> PartDetails { get; set; } = new();
 
         // Optional: settings snapshot used by exporter
-        public Settings AppSettings { get; set; }
+        public Settings? AppSettings { get; set; }
 
         // Percent values, e.g., 8.25 for 8.25%
         public double TaxRate { get; set; } = 0.0;
@@ -63,7 +63,7 @@ namespace DiamondFAB.Quote.Models
 
         public double GrandTotal => SubtotalAfterDiscount + Tax;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public void NotifyTotalsChanged()
         {

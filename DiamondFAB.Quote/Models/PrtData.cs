@@ -8,7 +8,7 @@ namespace DiamondFAB.Quote.Models
 {
     public class PrtData
     {
-        public string MaterialCode { get; set; }
+        public string? MaterialCode { get; set; }
         public double MaterialThickness { get; set; }
         public double FeedRate { get; set; } // (kept for future/fallback)
         public double PierceRateSec { get; set; }

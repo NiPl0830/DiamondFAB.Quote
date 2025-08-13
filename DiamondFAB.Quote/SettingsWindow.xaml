@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Settings"
-        Height="600"
+        Height="850"
         Width="700"
         MinHeight="520"
         MinWidth="620"

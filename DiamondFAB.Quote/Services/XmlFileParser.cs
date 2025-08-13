@@ -2,11 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using DiamondFAB.Quote.Models;
-using System.Xml.Linq;
-using DiamondFAB.Quote.Models;
 using System.Collections.Generic;
 using System.Globalization;
+using DiamondFAB.Quote.Models;
 
 namespace DiamondFAB.Quote.Services
 {
@@ -19,15 +17,16 @@ namespace DiamondFAB.Quote.Services
 
             var doc = XDocument.Load(filePath);
 
-            string GetValue(string tagName) =>
-                doc.Descendants(tagName).FirstOrDefault()?.Value.Trim() ?? string.Empty;
+            // Return the first matching element value (trimmed), or null
+            string? GetValue(string tagName) =>
+                doc.Descendants(tagName).FirstOrDefault()?.Value?.Trim();
 
-            // 👇 Grab the <Nest> block so we can read its ProcessTime specifically
+            // Prefer values specifically under <Nest> when needed
             var nest = doc.Descendants("Nest").FirstOrDefault();
 
             var data = new PrtData
             {
-                MaterialCode = GetValue("StockID"),
+                MaterialCode = GetValue("StockID") ?? string.Empty,
                 MaterialThickness = ParseDouble(GetValue("Thickness")),
                 FeedRate = ParseDouble(GetValue("FeedRate")),
                 PierceRateSec = ParseDouble(GetValue("PierceRate")),
@@ -39,17 +38,19 @@ namespace DiamondFAB.Quote.Services
                 MaterialCost = ParseDouble(GetValue("MaterialCost")),
                 Density = ParseDouble(GetValue("Density")),
 
-                // ✅ NEW: decimal minutes from <Nest><ProcessTime> (fallback to any ProcessTime tag if needed)
+                // NEW: ProcessTime from <Nest> in minutes (falls back to any ProcessTime tag)
                 ProcessTimeMinutes = nest != null
                                         ? ParseDouble(nest.Element("ProcessTime")?.Value)
                                         : ParseDouble(GetValue("ProcessTime"))
             };
 
             Console.WriteLine($"🧩 Parsed XML – Code: {data.MaterialCode}, Thickness: {data.MaterialThickness}, " +
-                              $"Density: {data.Density}, $/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}, " +
-                              $"ProcessTime(min): {data.ProcessTimeMinutes}");
+                              $"Density: {data.Density}, Cost/lb: {data.MaterialCost}, Qty: {data.RawMaterialQuantity}, " +
+                              $"ProcTime(min): {data.ProcessTimeMinutes}");
+
             return data;
         }
+
         public static List<PartDetail> ParsePartDetails(string filePath)
         {
             var partDetails = new List<PartDetail>();
@@ -58,10 +59,11 @@ namespace DiamondFAB.Quote.Services
             var partElements = doc.Descendants("Parts");
             foreach (var part in partElements)
             {
-                string name = part.Element("Part")?.Value ?? "N/A";
-                int qty = int.TryParse(part.Element("PartQty")?.Value, out int q) ? q : 0;
-                double cutDistance = double.TryParse(part.Element("CutDistance")?.Value, out double c) ? c : 0.0;
-                double area = double.TryParse(part.Element("AreaT")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double a) ? a : 0.0;
+                string name = part.Element("Part")?.Value?.Trim() ?? "N/A";
+                int qty = ParseInt(part.Element("PartQty")?.Value);
+                double cutDistance = ParseDouble(part.Element("CutDistance")?.Value);
+                // Use AreaT (true cut area) by default
+                double area = ParseDouble(part.Element("AreaT")?.Value);
 
                 partDetails.Add(new PartDetail
                 {
@@ -75,11 +77,17 @@ namespace DiamondFAB.Quote.Services
             return partDetails;
         }
 
-        static double ParseDouble(string str) =>
-            double.TryParse(str, System.Globalization.NumberStyles.Any,
-                            System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0.0;
+        // ---- Null-safe helpers ----
+        static double ParseDouble(string? str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return 0.0;
+            return double.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : 0.0;
+        }
 
-        static int ParseInt(string str) =>
-            int.TryParse(str, out var i) ? i : 0;
+        static int ParseInt(string? str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return 0;
+            return int.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : 0;
+        }
     }
 }

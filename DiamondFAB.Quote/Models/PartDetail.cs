@@ -9,7 +9,7 @@ namespace DiamondFAB.Quote.Models
     public class PartDetail
     {
         // XML extracted properties
-        public string Name { get; set; }            // formerly PartName
+        public string? Name { get; set; }            // formerly PartName
         public int Quantity { get; set; }           // formerly PartQty
         public double Area { get; set; }            // from AreaP or similar
         public double CutDistance { get; set; }
