@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
+        xmlns:conv="clr-namespace:DiamondFAB.Quote.Converters"
         mc:Ignorable="d"
         Title="{Binding AppTitle}"
         Height="640" Width="1180"
@@ -35,6 +36,7 @@
         <SolidColorBrush x:Key="DividerBrush"          Color="#232838"/>
         <SolidColorBrush x:Key="DangerBrush"           Color="#9B1B30"/>
         <SolidColorBrush x:Key="DangerHoverBrush"      Color="#B0213A"/>
+        <conv:ZeroToCollapsedConverter x:Key="ZeroToCollapsedConverter" />
 
         <!-- Typography -->
         <Style TargetType="TextBlock">
@@ -310,14 +312,20 @@
             <!-- Totals -->
             <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,12,0">
                 <StackPanel>
-                    <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat=Subtotal: {0:C}}"
-                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat=Subtotal: {0:C}}" 
+               Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                    <!-- Show discount only if > 0 -->
+                    <TextBlock Text="{Binding CurrentQuote.DiscountAmount, StringFormat=Discount: -{0:C}}"
+               Foreground="{StaticResource TextSecondaryBrush}"
+               Visibility="{Binding CurrentQuote.DiscountAmount, Converter={StaticResource ZeroToCollapsedConverter}}"/>
+
                     <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat=Tax: {0:C}}"
-                               Foreground="{StaticResource TextSecondaryBrush}"/>
+               Foreground="{StaticResource TextSecondaryBrush}"/>
+
                     <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat=Total: {0:C}}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
+               FontWeight="Bold" FontSize="16"
+               Foreground="{StaticResource TextPrimaryBrush}"/>
                 </StackPanel>
             </Border>
 

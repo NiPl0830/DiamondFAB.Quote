@@ -54,12 +54,14 @@ namespace DiamondFAB.Quote.ViewModels
 
             AppSettings = SettingsService.Load();
             CurrentQuote.TaxRate = AppSettings.TaxRate;
+            CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;   // ← apply discount from settings
             CurrentQuote.QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber();
         }
 
         partial void OnAppSettingsChanged(Settings value)
         {
             CurrentQuote.TaxRate = value.TaxRate;
+            CurrentQuote.DiscountPercent = value.DiscountPercent;         // ← keep in sync with Settings
             CurrentQuote.NotifyTotalsChanged();
         }
 
@@ -72,6 +74,7 @@ namespace DiamondFAB.Quote.ViewModels
             CurrentQuote = new QuoteModel
             {
                 TaxRate = AppSettings.TaxRate,
+                DiscountPercent = AppSettings.DiscountPercent,            // ← new quotes inherit discount
                 QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber()
             };
         }
@@ -175,7 +178,9 @@ namespace DiamondFAB.Quote.ViewModels
                 }
             }
 
+            // ensure totals (including discount) refresh
             CurrentQuote.TaxRate = AppSettings.TaxRate;
+            CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
             CurrentQuote.NotifyTotalsChanged();
         }
     }

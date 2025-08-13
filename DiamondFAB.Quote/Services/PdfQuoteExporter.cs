@@ -81,9 +81,15 @@ namespace DiamondFAB.Quote.Services
 
                             col.Item().AlignRight().PaddingTop(10).Column(right =>
                             {
-                                right.Item().Text($"Subtotal: {quote.Subtotal.ToString("C", CultureInfo.CurrentCulture)}");
-                                right.Item().Text($"Tax: {quote.Tax.ToString("C", CultureInfo.CurrentCulture)}");
-                                right.Item().Text($"Total: {quote.GrandTotal.ToString("C", CultureInfo.CurrentCulture)}").Bold();
+                                right.Item().Text($"Subtotal: {quote.Subtotal:C}");
+
+                                if (quote.DiscountPercent > 0)
+                                {
+                                    right.Item().Text($"Discount ({quote.DiscountPercent:0.#}%): -{quote.DiscountAmount:C}");
+                                }
+
+                                right.Item().Text($"Tax: {quote.Tax:C}");
+                                right.Item().Text($"Total: {quote.GrandTotal:C}").Bold();
                             });
 
                             col.Item().PaddingTop(20).Text("Terms and Conditions").Bold();

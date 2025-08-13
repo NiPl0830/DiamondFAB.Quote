@@ -214,6 +214,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.ColumnSpan="2" Text="Rates" Style="{StaticResource SectionTitle}"/>
@@ -223,6 +224,9 @@
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Tax Rate (%)" Style="{StaticResource FieldLabel}"/>
                         <TextBox  Grid.Row="2" Grid.Column="1" x:Name="TaxRateBox" Style="{StaticResource ModernTextBox}" Width="180" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Discount (%)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="DiscountPercentBox" Style="{StaticResource ModernTextBox}" Width="180" />
                     </Grid>
                 </Border>
 
