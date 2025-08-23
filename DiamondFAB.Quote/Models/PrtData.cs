@@ -19,8 +19,6 @@ namespace DiamondFAB.Quote.Models
         public int RawMaterialQuantity { get; set; }
         public double MaterialCost { get; set; }
         public double Density { get; set; } // lbs/in³
-
-        // NEW: minutes from <Nest><ProcessTime>
         public double ProcessTimeMinutes { get; set; }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -15,7 +16,6 @@ namespace DiamondFAB.Quote.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        // Bind your Window Title to this: Title="{Binding AppTitle}"
         [ObservableProperty]
         private string appTitle;
 
@@ -30,38 +30,26 @@ namespace DiamondFAB.Quote.ViewModels
 
         public MainViewModel()
         {
-            // Prefer informational version, trim +metadata and -pre-release
-            var infoVersion = Assembly
-                .GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                .InformationalVersion;
+            var fileVersion = FileVersionInfo
+                .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+                .FileVersion;
 
-            string version;
-            if (!string.IsNullOrWhiteSpace(infoVersion))
-            {
-                version = infoVersion;
-                int plus = version.IndexOf('+');
-                if (plus >= 0) version = version.Substring(0, plus);
-                int dash = version.IndexOf('-');
-                if (dash >= 0) version = version.Substring(0, dash);
-            }
-            else
-            {
-                version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
-            }
+            string version = !string.IsNullOrWhiteSpace(fileVersion)
+                ? fileVersion.Split('+', '-')[0]
+                : (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0");
 
             AppTitle = $"DiamondFAB Quote v{version}";
 
             AppSettings = SettingsService.Load();
             CurrentQuote.TaxRate = AppSettings.TaxRate;
-            CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;   // ← apply discount from settings
+            CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
             CurrentQuote.QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber();
         }
 
         partial void OnAppSettingsChanged(Settings value)
         {
             CurrentQuote.TaxRate = value.TaxRate;
-            CurrentQuote.DiscountPercent = value.DiscountPercent;         // ← keep in sync with Settings
+            CurrentQuote.DiscountPercent = value.DiscountPercent;
             CurrentQuote.NotifyTotalsChanged();
         }
 
@@ -74,7 +62,7 @@ namespace DiamondFAB.Quote.ViewModels
             CurrentQuote = new QuoteModel
             {
                 TaxRate = AppSettings.TaxRate,
-                DiscountPercent = AppSettings.DiscountPercent,            // ← new quotes inherit discount
+                DiscountPercent = AppSettings.DiscountPercent,
                 QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber()
             };
         }
@@ -96,11 +84,10 @@ namespace DiamondFAB.Quote.ViewModels
             ImportXmlFiles(dialog.FileNames);
         }
 
-        // Pretty "Xh Ym" formatting for minute values
         private static string FormatMinutes(double minutes)
         {
             if (minutes <= 0) return "0m";
-            var total = Math.Round(minutes);  // whole minutes
+            var total = Math.Round(minutes);
             int h = (int)(total / 60);
             int m = (int)(total % 60);
             return h > 0 ? $"{h}h {m}m" : $"{m}m";
@@ -112,29 +99,18 @@ namespace DiamondFAB.Quote.ViewModels
             {
                 var data = XmlFileParser.Parse(file);
 
+                // Quantity of sheets/nests for MATERIAL math
                 int qty = Math.Max(1, data.RawMaterialQuantity);
 
-                // --- Laser time: prefer <ProcessTime> (minutes) from <Nest>, else fallback to legacy calc ---
-                double perSheetMinutes = data.ProcessTimeMinutes;  // <-- new field from XML
-                if (perSheetMinutes <= 0)
-                {
-                    double feed = data.FeedRate > 0 ? data.FeedRate : 1;                 // in/min
-                    double timeCutMin = data.TotalCutDistance / feed;                    // minutes
-                    double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
-                    perSheetMinutes = timeCutMin + timePierceMin;
-                }
+                // ---- LASER TIME (already full across all sheets) ----
+                // Use ProcessTimeMinutes directly; DO NOT multiply by qty
+                double totalMinutes = data.ProcessTimeMinutes > 0
+                                    ? data.ProcessTimeMinutes
+                                    : FallbackMinutes(data);          // safety fallback if XML missing
 
-                double totalMinutes = perSheetMinutes * qty;
                 double totalHours = totalMinutes / 60.0;
                 string humanTime = FormatMinutes(totalMinutes);
-
                 double laserCost = Math.Round(AppSettings.HourlyLaserRate * totalHours, 2);
-
-                // --- Material cost (volume * density * $/lb) ---
-                double volumePerSheet = data.RawLength * data.RawWidth * data.MaterialThickness; // in^3
-                double weightPerSheet = volumePerSheet * data.Density;                            // lbs
-                double totalWeight = weightPerSheet * qty;                                        // lbs
-                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);             // $/lb
 
                 var laserItem = new LineItem
                 {
@@ -143,6 +119,12 @@ namespace DiamondFAB.Quote.ViewModels
                     UnitPrice = laserCost
                 };
 
+                // ---- MATERIAL COST (qty * volume * density * $/lb) ----
+                double volumePerSheet = data.RawLength * data.RawWidth * data.MaterialThickness; // in^3
+                double weightPerSheet = volumePerSheet * data.Density;                            // lbs
+                double totalWeight = weightPerSheet * qty;                                     // lbs
+                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);           // $ total
+
                 var materialItem = new LineItem
                 {
                     Description = $"{data.MaterialCode} – Material Cost ({Math.Round(totalWeight, 2)} lbs)",
@@ -150,38 +132,47 @@ namespace DiamondFAB.Quote.ViewModels
                     UnitPrice = Math.Round(materialCost / qty, 2)
                 };
 
+                // Add to UI collection and the quote model
                 LineItems.Add(laserItem);
                 LineItems.Add(materialItem);
                 CurrentQuote.LineItems.Add(laserItem);
                 CurrentQuote.LineItems.Add(materialItem);
 
-                // --- Part-level details (for page 2 of PDF) ---
+                // ---- PART-LEVEL DETAILS (page 2 of PDF) ----
                 var partList = XmlFileParser.ParsePartDetails(file);
                 if (CurrentQuote.PartDetails == null)
                     CurrentQuote.PartDetails = new List<PartDetail>();
 
-                // Keep part-level laser calc based on per-part cut distance (feed fallback from file)
-                double feedForParts = data.FeedRate > 0 ? data.FeedRate : 1; // in/min
+                // For part laser estimate, still fall back to feed rate + per-part cut distance
+                double feedForParts = data.FeedRate > 0 ? data.FeedRate : 1; // in/min guard
                 foreach (var part in partList)
                 {
-                    // inches / (in/min) = minutes
+                    // Laser estimate per part
                     double minutesPerPart = part.CutDistance / feedForParts;
                     double hoursPerPart = minutesPerPart / 60.0;
-
                     part.LaserCost = Math.Round(hoursPerPart * AppSettings.HourlyLaserRate * part.Quantity, 2);
 
+                    // Material per part
                     double partVolume = part.Area * data.MaterialThickness; // in^3
-                    double weightPerPart = partVolume * data.Density;       // lbs
+                    double weightPerPart = partVolume * data.Density;          // lbs
                     part.MaterialCost = Math.Round(weightPerPart * data.MaterialCost * part.Quantity, 2);
 
                     CurrentQuote.PartDetails.Add(part);
                 }
             }
 
-            // ensure totals (including discount) refresh
             CurrentQuote.TaxRate = AppSettings.TaxRate;
             CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
             CurrentQuote.NotifyTotalsChanged();
+        }
+
+        private static double FallbackMinutes(PrtData data)
+        {
+            // Old-school estimate if ProcessTimeMinutes missing
+            double feed = data.FeedRate > 0 ? data.FeedRate : 1;                 // in/min
+            double timeCutMin = data.TotalCutDistance / feed;                    // minutes
+            double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
+            return timeCutMin + timePierceMin;
         }
     }
 }

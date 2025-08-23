@@ -36,25 +36,36 @@ namespace DiamondFAB.Quote
 
         private void ExportPdfButton_Click(object sender, RoutedEventArgs e)
         {
-            var saveDialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "PDF files (*.pdf)|*.pdf",
-                FileName = "Quote.pdf"
-            };
+            var vm = this.DataContext as DiamondFAB.Quote.ViewModels.MainViewModel;
 
-            if (saveDialog.ShowDialog() == true)
+            if (vm != null && vm.CurrentQuote.LineItems.Count > 0)
             {
-                var vm = this.DataContext as DiamondFAB.Quote.ViewModels.MainViewModel;
+                // Get company name and quote number, sanitize for file name
+                string companyName = vm.AppSettings.CompanyName?.Trim() ?? "Company";
+                string quoteNumber = vm.CurrentQuote.QuoteNumber?.Trim() ?? "Quote";
 
-                if (vm != null && vm.CurrentQuote.LineItems.Count > 0)
+                // Remove invalid filename characters
+                foreach (var c in System.IO.Path.GetInvalidFileNameChars())
+                {
+                    companyName = companyName.Replace(c, '_');
+                    quoteNumber = quoteNumber.Replace(c, '_');
+                }
+
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    FileName = $"{companyName}_{quoteNumber}.pdf"
+                };
+
+                if (saveDialog.ShowDialog() == true)
                 {
                     PdfQuoteExporter.Export(vm.CurrentQuote, vm.AppSettings, saveDialog.FileName);
                     MessageBox.Show("PDF Exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                else
-                {
-                    MessageBox.Show("There is no quote to export. Please import a .PRT file first.", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+            }
+            else
+            {
+                MessageBox.Show("There is no quote to export. Please import a .PRT file first.", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         private void Window_DragEnter(object sender, DragEventArgs e)

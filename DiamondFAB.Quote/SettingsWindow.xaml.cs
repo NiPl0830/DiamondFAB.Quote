@@ -21,23 +21,16 @@ namespace DiamondFAB.Quote
 
         private async void SettingsWindow_Loaded(object? sender, RoutedEventArgs e)
         {
-            // show version in footer (trim +build and -pre-release)
-            string version = Assembly
-                .GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                .InformationalVersion
-                ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
-                ?? "1.0.0";
-
-            // strip "+metadata" and "-prerelease" if present
-            int plus = version.IndexOf('+');
-            if (plus >= 0) version = version.Substring(0, plus);
-            int dash = version.IndexOf('-');
-            if (dash >= 0) version = version.Substring(0, dash);
-
+            // Show version (trim metadata)
+            string version = Assembly.GetExecutingAssembly()
+                                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                                     .InformationalVersion
+                           ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                           ?? "1.0.0";
+            int plus = version.IndexOf('+'); if (plus >= 0) version = version[..plus];
+            int dash = version.IndexOf('-'); if (dash >= 0) version = version[..dash];
             VersionTextBlock.Text = $"Version: {version}";
 
-            // load settings asynchronously
             var settings = await Task.Run(SettingsService.Load);
             ApplySettings(settings);
         }
@@ -52,8 +45,6 @@ namespace DiamondFAB.Quote
 
             LaserRateBox.Text = _settings.HourlyLaserRate.ToString(CultureInfo.InvariantCulture);
             TaxRateBox.Text = _settings.TaxRate.ToString(CultureInfo.InvariantCulture);
-
-            // NEW: discount percent textbox (0–100)
             DiscountPercentBox.Text = _settings.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
 
             TermsBox.Text = _settings.TermsAndConditions;
@@ -72,24 +63,17 @@ namespace DiamondFAB.Quote
             if (TryParseDouble(TaxRateBox.Text, out var taxRate))
                 _settings.TaxRate = taxRate;
 
-            // NEW: read discount from textbox, clamp 0–100
             if (TryParseDouble(DiscountPercentBox.Text, out var discount))
-            {
-                if (discount < 0) discount = 0;
-                if (discount > 100) discount = 100;
-                _settings.DiscountPercent = discount;
-            }
+                _settings.DiscountPercent = Math.Clamp(discount, 0, 100);
 
             SettingsService.Save(_settings);
 
-            // push into MainViewModel
             if (Owner is MainWindow mainWindow &&
                 mainWindow.DataContext is MainViewModel vm)
             {
-                vm.AppSettings = _settings;               // will refresh tax etc.
+                vm.AppSettings = _settings;
                 vm.CurrentQuote.TaxRate = _settings.TaxRate;
-
-                // you’ll wire discount into totals next; for now settings is saved and available
+                vm.CurrentQuote.DiscountPercent = _settings.DiscountPercent;
                 vm.CurrentQuote.NotifyTotalsChanged();
             }
 
@@ -98,14 +82,35 @@ namespace DiamondFAB.Quote
 
         private static bool TryParseDouble(string? text, out double value)
         {
-            // Support both current culture and invariant (for users typing 10,5 vs 10.5)
-            if (double.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out value))
-                return true;
-            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out value))
-                return true;
-
+            if (double.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out value)) return true;
+            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out value)) return true;
             value = 0;
             return false;
         }
+
+        // NEW: open customer picker
+        private void SelectCustomerButton_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new CustomerPickerWindow
+            {
+                Owner = this
+            };
+
+            if (picker.ShowDialog() == true && picker.SelectedCustomer != null)
+            {
+                var c = picker.SelectedCustomer;
+
+                // Push into the Settings UI fields
+                CompanyNameBox.Text = c.CompanyName ?? string.Empty;
+                CompanyAddressBox.Text = c.Address ?? string.Empty;
+                ContactEmailBox.Text = c.Email ?? string.Empty;
+
+                // Non-nullable doubles: assign directly
+                TaxRateBox.Text = c.DefaultTaxRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                DiscountPercentBox.Text = c.DefaultDiscountPercent.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e) => Close();
     }
 }

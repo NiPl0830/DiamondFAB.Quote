@@ -164,8 +164,8 @@
         <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="20">
             <DockPanel>
                 <TextBlock Text="Settings" Style="{StaticResource H1}" DockPanel.Dock="Left"/>
-                <TextBlock Text="Configure company info, rates, and terms." 
-                           Foreground="{StaticResource TextSecondaryBrush}" 
+                <TextBlock Text="Configure company info, customer defaults, rates, and terms."
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            Margin="16,2,0,0" DockPanel.Dock="Left"/>
             </DockPanel>
         </Border>
@@ -184,12 +184,23 @@
 
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <!-- title + select customer -->
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.ColumnSpan="2" Text="Company Info" Style="{StaticResource SectionTitle}"/>
+                        <!-- Title + Select Customer button -->
+                        <DockPanel Grid.Row="0" Grid.ColumnSpan="2" LastChildFill="False">
+                            <TextBlock Text="Company Info" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
+                            <Button Content="Select Customer…"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Width="160"
+                                    Height="34"
+                                    Margin="8,0,0,0"
+                                    DockPanel.Dock="Right"
+                                    Click="SelectCustomerButton_Click"/>
+                        </DockPanel>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Company Name" Style="{StaticResource FieldLabel}"/>
                         <TextBox  Grid.Row="1" Grid.Column="1" x:Name="CompanyNameBox" Style="{StaticResource ModernTextBox}" />
@@ -255,8 +266,20 @@
                            FontSize="12"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            Text="Version: Loading..." />
+
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Save Settings" Style="{StaticResource PrimaryButton}" Click="SaveButton_Click"/>
+                    <!-- Cancel -->
+                    <Button Content="Cancel"
+                            Style="{StaticResource PrimaryButton}"
+                            Width="120"
+                            Margin="0,0,10,0"
+                            Click="CancelButton_Click"/>
+
+                    <!-- Save -->
+                    <Button Content="Save Settings"
+                            Style="{StaticResource PrimaryButton}"
+                            Width="150"
+                            Click="SaveButton_Click"/>
                 </StackPanel>
             </DockPanel>
         </Border>

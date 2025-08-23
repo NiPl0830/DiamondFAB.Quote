@@ -6,6 +6,7 @@ using QuestPDF.Infrastructure;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq; // Any()
 using System.Windows;
 using QuoteModel = DiamondFAB.Quote.Models.Quote;
 
@@ -17,137 +18,76 @@ namespace DiamondFAB.Quote.Services
         {
             try
             {
-                var document = Document.Create(container =>
+                // Colors as strings to avoid Color/string mixing
+                string accent = Colors.Red.Medium;
+                string greyBorder = Colors.Grey.Lighten2;
+                string greyHeader = Colors.Grey.Lighten4;
+                string greyPanel = Colors.Grey.Lighten5;
+                string white = "#FFFFFF";
+
+                var doc = Document.Create(container =>
                 {
-                    // Page 1: Main Quote Summary
+                    // ===================== PAGE 1 — QUOTE SUMMARY =====================
                     container.Page(page =>
                     {
                         page.Margin(40);
                         page.Size(PageSizes.A4);
                         page.PageColor(Colors.White);
-                        page.DefaultTextStyle(x => x.FontSize(12));
+                        page.DefaultTextStyle(x => x.FontSize(11));
 
-                        page.Header().Row(row =>
-                        {
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text(settings.CompanyName).Bold().FontSize(18);
-                                col.Item().Text(settings.CompanyAddress);
-                                col.Item().Text(settings.ContactEmail);
-                            });
+                        // Header & Footer
+                        page.Header().Element(h => BuildHeader(h, settings, accent));
+                        page.Footer().Element(BuildFooter);
 
-                            if (!string.IsNullOrWhiteSpace(settings.LogoPath) && File.Exists(settings.LogoPath))
-                                row.ConstantItem(100).Height(60).Image(settings.LogoPath);
-                        });
-
+                        // Content
                         page.Content().Column(col =>
                         {
-                            col.Item().Text($"Quote #: {quote.QuoteNumber}").Bold().FontSize(14);
-                            col.Item().Text($"Date: {quote.Date:d}").FontSize(12);
+                            col.Spacing(12);
 
-                            col.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                            // Title + meta
+                            col.Item().Element(c => BuildQuoteMeta(c, quote, greyPanel, greyBorder));
 
-                            col.Item().Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.RelativeColumn(3);
-                                    columns.ConstantColumn(50);
-                                    columns.ConstantColumn(80);
-                                    columns.ConstantColumn(80);
-                                });
+                            // Divider
+                            col.Item().Height(1).Background(greyBorder);
 
-                                // Header styling
-                                table.Header(header =>
-                                {
-                                    header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Description").Bold();
-                                    header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignCenter().Text("Qty").Bold();
-                                    header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Unit").Bold();
-                                    header.Cell().Background(Colors.Grey.Lighten3).Padding(5).AlignRight().Text("Total").Bold();
-                                });
+                            // Line items
+                            col.Item().Element(c => BuildLineItemsTable(c, quote, greyHeader, greyBorder, greyPanel, white));
 
-                                bool even = false;
-                                foreach (var item in quote.LineItems)
-                                {
-                                    even = !even;
-                                    var bg = even ? Colors.White : Colors.Grey.Lighten5;
+                            // Totals card
+                            col.Item().AlignRight().Width(280).Element(c => BuildTotalsCard(c, quote, greyPanel, greyBorder));
 
-                                    table.Cell().Background(bg).Padding(4).Text(item.Description);
-                                    table.Cell().Background(bg).Padding(4).AlignCenter().Text(item.Quantity.ToString());
-                                    table.Cell().Background(bg).Padding(4).AlignRight().Text(item.UnitPrice.ToString("C", CultureInfo.CurrentCulture));
-                                    table.Cell().Background(bg).Padding(4).AlignRight().Text(item.Total.ToString("C", CultureInfo.CurrentCulture));
-                                }
-                            });
-
-                            col.Item().AlignRight().PaddingTop(10).Column(right =>
-                            {
-                                right.Item().Text($"Subtotal: {quote.Subtotal:C}");
-
-                                if (quote.DiscountPercent > 0)
-                                {
-                                    right.Item().Text($"Discount ({quote.DiscountPercent:0.#}%): -{quote.DiscountAmount:C}");
-                                }
-
-                                right.Item().Text($"Tax: {quote.Tax:C}");
-                                right.Item().Text($"Total: {quote.GrandTotal:C}").Bold();
-                            });
-
-                            col.Item().PaddingTop(20).Text("Terms and Conditions").Bold();
-                            col.Item().Text(settings.TermsAndConditions ?? "None Provided");
+                            // Terms
+                            col.Item().PaddingTop(6).Element(c => BuildTerms(c, settings, greyPanel, greyBorder));
                         });
                     });
 
-                    // Page 2: Part-Level Breakdown
-                    // In container.Page(...) section after main summary:
+                    // ===================== PAGE 2 — PART-LEVEL BREAKDOWN =====================
                     if (quote.PartDetails?.Any() == true)
                     {
-                        container.Page(page => {
+                        container.Page(page =>
+                        {
                             page.Margin(40);
                             page.Size(PageSizes.A4);
                             page.PageColor(Colors.White);
-                            page.DefaultTextStyle(x => x.FontSize(12));
+                            page.DefaultTextStyle(x => x.FontSize(11));
 
-                            page.Content().Column(col => {
-                                col.Item().PaddingBottom(10)
-                                   .Text("Part-Level Cost Breakdown")
-                                   .Bold().FontSize(16);
+                            page.Header().Column(header =>
+                            {
+                                header.Item().Text("Part-Level Cost Breakdown").Bold().FontSize(16);
+                                header.Item().Height(3).Background(accent);
+                            });
 
-                                col.Item().Table(table => {
-                                    table.ColumnsDefinition(columns => {
-                                        columns.RelativeColumn(5);  // Part name
-                                        columns.ConstantColumn(50); // Qty
-                                        columns.ConstantColumn(80); // Total
-                                    });
+                            page.Footer().Element(BuildFooter);
 
-                                    table.Header(header => {
-                                        header.Cell().Background(Colors.Grey.Lighten3)
-                                              .Padding(5).Text("Part").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3)
-                                              .Padding(5).AlignCenter().Text("Qty").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten3)
-                                              .Padding(5).AlignRight().Text("Total").Bold();
-                                    });
-
-                                    bool even = false;
-                                    foreach (var part in quote.PartDetails)
-                                    {
-                                        even = !even;
-                                        var bg = even ? Colors.White : Colors.Grey.Lighten5;
-
-                                        table.Cell().Background(bg).Padding(4)
-                                              .Text(part.Name);
-                                        table.Cell().Background(bg).Padding(4)
-                                              .AlignCenter().Text(part.Quantity.ToString());
-                                        table.Cell().Background(bg).Padding(4)
-                                              .AlignRight().Text(part.TotalCost.ToString("C", CultureInfo.CurrentCulture));
-                                    }
-                                });
+                            page.Content().Column(col =>
+                            {
+                                col.Item().Element(c => BuildPartsTable(c, quote, greyHeader, greyBorder, greyPanel, white));
                             });
                         });
                     }
                 });
 
-                document.GeneratePdf(filePath);
+                doc.GeneratePdf(filePath);
             }
             catch (Exception ex)
             {
@@ -155,6 +95,238 @@ namespace DiamondFAB.Quote.Services
                 MessageBox.Show(msg, "PDF Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Console.WriteLine(msg);
             }
+        }
+
+        // ============================= Builders =============================
+
+        private static void BuildHeader(IContainer header, Settings settings, string accent)
+        {
+            header.Column(col =>
+            {
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text(settings.CompanyName).Bold().FontSize(18);
+
+                        if (!string.IsNullOrWhiteSpace(settings.CompanyAddress))
+                            c.Item().Text(settings.CompanyAddress);
+
+                        if (!string.IsNullOrWhiteSpace(settings.ContactEmail))
+                            c.Item().Text(settings.ContactEmail);
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(settings.LogoPath) && File.Exists(settings.LogoPath))
+                        row.ConstantItem(110).Height(50).Element(e =>
+                        {
+                            // QuestPDF 2023.5+ style
+                            e.Image(settings.LogoPath).FitArea();
+                        });
+                });
+
+                // Accent bar
+                col.Item().Height(3).Background(accent);
+            });
+        }
+
+        private static void BuildFooter(IContainer footer)
+        {
+            footer.AlignCenter().Text(t =>
+            {
+                t.Span("Page ");
+                t.CurrentPageNumber();
+                t.Span(" of ");
+                t.TotalPages();
+            });
+        }
+
+        private static void BuildQuoteMeta(IContainer container, QuoteModel quote, string panelBg, string borderColor)
+        {
+            container.Row(row =>
+            {
+                row.RelativeItem().Text("Quote").Bold().FontSize(16);
+
+                row.ConstantItem(260)
+                   .PaddingTop(6) // visual offset from accent bar
+                   .Background(panelBg)
+                   .Border(1).BorderColor(borderColor)
+                   .Padding(8)
+                   .Column(meta =>
+                   {
+                       meta.Spacing(4);
+                       meta.Item().Text($"Quote #: {quote.QuoteNumber}").SemiBold();
+                       meta.Item().Text($"Date: {quote.Date.ToString("d", CultureInfo.CurrentCulture)}");
+                   });
+            });
+        }
+
+        private static void BuildLineItemsTable(
+            IContainer container,
+            QuoteModel quote,
+            string headerBg,
+            string borderColor,
+            string zebraAltBg,
+            string white)
+        {
+            container.Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(5);   // Description
+                    cols.ConstantColumn(50);  // Qty
+                    cols.ConstantColumn(90);  // Unit
+                    cols.ConstantColumn(100); // Total
+                });
+
+                // Header (inline styling, no typed helpers)
+                table.Header(h =>
+                {
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).Text("Description").SemiBold();
+
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).AlignCenter().Text("Qty").SemiBold();
+
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).AlignRight().Text("Unit").SemiBold();
+
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).AlignRight().Text("Total").SemiBold();
+                });
+
+                // Rows
+                bool even = false;
+                foreach (var item in quote.LineItems)
+                {
+                    even = !even;
+                    string bg = even ? white : zebraAltBg;
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6)
+                         .Text(item.Description);
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
+                         .Text(item.Quantity.ToString());
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                         .Text(item.UnitPrice.ToString("C", CultureInfo.CurrentCulture));
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                         .Text(item.Total.ToString("C", CultureInfo.CurrentCulture));
+                }
+            });
+        }
+
+        private static void BuildTotalsCard(IContainer container, QuoteModel quote, string panelBg, string borderColor)
+        {
+            container.Background(panelBg)
+                     .Border(1).BorderColor(borderColor)
+                     .Padding(10)
+                     .Column(card =>
+                     {
+                         card.Spacing(4);
+
+                         decimal subtotal = Convert.ToDecimal(quote.Subtotal);
+                         decimal discountAmount = Convert.ToDecimal(quote.DiscountAmount);
+                         decimal tax = Convert.ToDecimal(quote.Tax);
+                         decimal total = Convert.ToDecimal(quote.GrandTotal);
+
+                         bool hasDiscount = discountAmount > 0m;
+
+                         string discountLabel = hasDiscount && subtotal > 0m
+                             ? $"Discount ({(discountAmount / subtotal * 100m):0.#}%):"
+                             : "Discount:";
+
+                         // Subtotal
+                         card.Item().Row(r =>
+                         {
+                             r.RelativeItem().Text("Subtotal:");
+                             r.ConstantItem(120).AlignRight().Text(subtotal.ToString("C", CultureInfo.CurrentCulture));
+                         });
+
+                         // Discount (optional)
+                         if (hasDiscount)
+                         {
+                             card.Item().Row(r =>
+                             {
+                                 r.RelativeItem().Text(discountLabel);
+                                 r.ConstantItem(120).AlignRight().Text($"-{discountAmount.ToString("C", CultureInfo.CurrentCulture)}");
+                             });
+                         }
+
+                         // Tax
+                         card.Item().Row(r =>
+                         {
+                             r.RelativeItem().Text("Tax:");
+                             r.ConstantItem(120).AlignRight().Text(tax.ToString("C", CultureInfo.CurrentCulture));
+                         });
+
+                         // Total
+                         card.Item().PaddingTop(6).Row(r =>
+                         {
+                             r.RelativeItem().Text("Total:").SemiBold();
+                             r.ConstantItem(120).AlignRight().Text(total.ToString("C", CultureInfo.CurrentCulture)).SemiBold();
+                         });
+                     });
+        }
+
+        private static void BuildTerms(IContainer container, Settings settings, string panelBg, string borderColor)
+        {
+            container.Column(terms =>
+            {
+                terms.Item().Text("Terms and Conditions").Bold().FontSize(12);
+                terms.Item().Background(panelBg)
+                            .Border(1).BorderColor(borderColor)
+                            .Padding(10)
+                            .Text(settings.TermsAndConditions ?? "None Provided");
+            });
+        }
+
+        private static void BuildPartsTable(
+            IContainer container,
+            QuoteModel quote,
+            string headerBg,
+            string borderColor,
+            string zebraAltBg,
+            string white)
+        {
+            container.Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(6);   // Part
+                    cols.ConstantColumn(60);  // Qty
+                    cols.ConstantColumn(100); // Total
+                });
+
+                // Header
+                table.Header(h =>
+                {
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).Text("Part").SemiBold();
+
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).AlignCenter().Text("Qty").SemiBold();
+
+                    h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
+                        .PaddingVertical(6).PaddingHorizontal(6).AlignRight().Text("Total").SemiBold();
+                });
+
+                bool even = false;
+                foreach (var part in quote.PartDetails)
+                {
+                    even = !even;
+                    string bg = even ? white : zebraAltBg;
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6)
+                         .Text(part.Name);
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
+                         .Text(part.Quantity.ToString());
+
+                    table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignRight()
+                         .Text(part.TotalCost.ToString("C", CultureInfo.CurrentCulture));
+                }
+            });
         }
     }
 }

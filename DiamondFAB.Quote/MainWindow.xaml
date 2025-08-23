@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
         xmlns:conv="clr-namespace:DiamondFAB.Quote.Converters"
+
+
         mc:Ignorable="d"
         Title="{Binding AppTitle}"
         Height="640" Width="1180"

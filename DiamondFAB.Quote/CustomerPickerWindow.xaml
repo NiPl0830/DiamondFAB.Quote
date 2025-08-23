@@ -1,0 +1,123 @@
+﻿<Window x:Class="DiamondFAB.Quote.CustomerPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select Customer"
+        Height="540" Width="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#0F1115">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="CardBrush" Color="#181B22"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#242937"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E9EDF5"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#AAB2C5"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#4C8DF6"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#6EA2FF"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Background" Value="#111319"/>
+            <Setter Property="BorderBrush" Value="#2A3040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Height" Value="36"/>
+        </Style>
+
+        <Style TargetType="ListView">
+            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- ✅ Correct way: keep GridView's presenter, just restyle the container -->
+        <Style TargetType="ListViewItem"
+               BasedOn="{StaticResource {x:Static GridView.GridViewItemContainerStyleKey}}">
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Style.Triggers>
+                <!-- Hover -->
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1A4C8DF6"/>
+                </Trigger>
+
+                <!-- Selected (focused) -->
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+
+                <!-- Selected when window not focused -->
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="IsSelected" Value="True"/>
+                        <Condition Property="Selector.IsSelectionActive" Value="False"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="#355F9F"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </MultiTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Search -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox x:Name="SearchBox"
+                     Width="260"
+                     TextChanged="SearchBox_TextChanged"/>
+        </DockPanel>
+
+        <!-- List -->
+        <ListView x:Name="CustomerList"
+                  Grid.Row="1" Margin="0,0,0,10"
+                  MouseDoubleClick="CustomerList_MouseDoubleClick"
+                  SelectionMode="Single">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Company" Width="260" DisplayMemberBinding="{Binding CompanyName}"/>
+                    <GridViewColumn Header="Email"   Width="220" DisplayMemberBinding="{Binding Email}"/>
+                    <GridViewColumn Header="Address" Width="220" DisplayMemberBinding="{Binding Address}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <!-- Add New -->
+            <Button Content="+ Add New"
+                    Margin="0,0,8,0"
+                    Click="AddButton_Click"/>
+
+            <!-- Select -->
+            <Button Content="Select"
+                    Margin="0,0,8,0"
+                    Click="Select_Click"/>
+
+            <!-- Cancel -->
+            <Button Content="Cancel"
+                    Background="#3B4358"
+                    Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
