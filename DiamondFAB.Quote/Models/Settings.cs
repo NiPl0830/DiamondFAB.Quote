@@ -19,5 +19,6 @@ namespace DiamondFAB.Quote.Models
         public string? LogoPath { get; set; }
         public int LastQuoteNumber { get; set; } = 1000; // starting point
         public double DiscountPercent { get; set; }
+        public List<ExtraCharge> ExtraCharges { get; set; } = new();
     }
 }

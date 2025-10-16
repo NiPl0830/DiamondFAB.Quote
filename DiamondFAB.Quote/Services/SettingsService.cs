@@ -1,6 +1,7 @@
 ﻿using DiamondFAB.Quote.Models;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace DiamondFAB.Quote.Services
@@ -31,19 +32,54 @@ namespace DiamondFAB.Quote.Services
                     {
                         File.Copy(LegacyFilePath, FilePath, overwrite: false);
                     }
-                    catch { /* ignore if copy fails */ }
+                    catch
+                    {
+                        // ignore if copy fails
+                    }
                 }
 
+                Settings settings;
                 if (!File.Exists(FilePath))
-                    return new Settings(); // fresh defaults
+                {
+                    settings = new Settings();
+                }
+                else
+                {
+                    var json = File.ReadAllText(FilePath);
+                    settings = JsonConvert.DeserializeObject<Settings>(json) ?? new Settings();
+                }
 
-                var json = File.ReadAllText(FilePath);
-                return JsonConvert.DeserializeObject<Settings>(json) ?? new Settings();
+                // --- NEW: Seed default ExtraCharges if missing ---
+                if (settings.ExtraCharges == null || settings.ExtraCharges.Count == 0)
+                {
+                    settings.ExtraCharges = new List<ExtraCharge>
+                    {
+                        new ExtraCharge { Key = "setup_handling", Name = "Setup / Handling", Amount = 25.00, IsEnabled = false },
+                        new ExtraCharge { Key = "deburr",          Name = "Deburr",          Amount = 15.00, IsEnabled = false },
+                        new ExtraCharge { Key = "welding",         Name = "Welding",         Amount = 35.00, IsEnabled = false },
+                        new ExtraCharge { Key = "paint",           Name = "Paint",           Amount = 45.00, IsEnabled = false },
+                    };
+
+                    // Save once to persist these defaults
+                    Save(settings);
+                }
+
+                return settings;
             }
             catch
             {
                 // If anything goes sideways, fall back to defaults so the app still runs
-                return new Settings();
+                var safeDefaults = new Settings
+                {
+                    ExtraCharges = new List<ExtraCharge>
+                    {
+                        new ExtraCharge { Key = "setup_handling", Name = "Setup / Handling", Amount = 25.00, IsEnabled = false },
+                        new ExtraCharge { Key = "deburr",          Name = "Deburr",          Amount = 15.00, IsEnabled = false },
+                        new ExtraCharge { Key = "welding",         Name = "Welding",         Amount = 35.00, IsEnabled = false },
+                        new ExtraCharge { Key = "paint",           Name = "Paint",           Amount = 45.00, IsEnabled = false },
+                    }
+                };
+                return safeDefaults;
             }
         }
 

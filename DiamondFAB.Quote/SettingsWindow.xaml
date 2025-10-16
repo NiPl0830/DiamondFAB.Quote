@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Settings"
-        Height="850"
+        Height="800"
         Width="700"
         MinHeight="520"
         MinWidth="620"
@@ -164,7 +164,7 @@
         <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="20">
             <DockPanel>
                 <TextBlock Text="Settings" Style="{StaticResource H1}" DockPanel.Dock="Left"/>
-                <TextBlock Text="Configure company info, customer defaults, rates, and terms."
+                <TextBlock Text="Configure company info, customer defaults, rates, extra charges, and terms."
                            Foreground="{StaticResource TextSecondaryBrush}"
                            Margin="16,2,0,0" DockPanel.Dock="Left"/>
             </DockPanel>
@@ -172,25 +172,22 @@
 
         <!-- CONTENT -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="20" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
+            <StackPanel Margin="20" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch">
 
-                <!-- Company Info Card -->
+                <!-- Company Info -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <!-- title + select customer -->
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Title + Select Customer button -->
                         <DockPanel Grid.Row="0" Grid.ColumnSpan="2" LastChildFill="False">
                             <TextBlock Text="Company Info" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
                             <Button Content="Select Customer…"
@@ -213,14 +210,13 @@
                     </Grid>
                 </Border>
 
-                <!-- Rates Card -->
+                <!-- Rates -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -241,7 +237,38 @@
                     </Grid>
                 </Border>
 
-                <!-- Terms & Conditions Card -->
+                <!-- Extra Charges -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.ColumnSpan="2" Text="Extra Charges" Style="{StaticResource SectionTitle}"/>
+
+                        <CheckBox Grid.Row="1" Grid.Column="0" x:Name="SetupHandlingCheck" Content="Setup / Handling" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="SetupHandlingAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+
+                        <CheckBox Grid.Row="2" Grid.Column="0" x:Name="DeburrCheck" Content="Deburr" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="DeburrAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+
+                        <CheckBox Grid.Row="3" Grid.Column="0" x:Name="WeldingCheck" Content="Welding" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="WeldingAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+
+                        <CheckBox Grid.Row="4" Grid.Column="0" x:Name="PaintCheck" Content="Paint" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBox  Grid.Row="4" Grid.Column="1" x:Name="PaintAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+                    </Grid>
+                </Border>
+
+                <!-- Terms & Conditions -->
                 <Border Style="{StaticResource Card}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -268,14 +295,11 @@
                            Text="Version: Loading..." />
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <!-- Cancel -->
                     <Button Content="Cancel"
                             Style="{StaticResource PrimaryButton}"
                             Width="120"
                             Margin="0,0,10,0"
                             Click="CancelButton_Click"/>
-
-                    <!-- Save -->
                     <Button Content="Save Settings"
                             Style="{StaticResource PrimaryButton}"
                             Width="150"

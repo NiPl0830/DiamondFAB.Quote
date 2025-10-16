@@ -12,5 +12,7 @@ namespace DiamondFAB.Quote.Models
         public int Quantity { get; set; }
         public double UnitPrice { get; set; }
         public double Total => Quantity * UnitPrice;
+        public bool IsExtraCharge { get; set; }
+        public string? ExtraKey { get; set; }
     }
 }

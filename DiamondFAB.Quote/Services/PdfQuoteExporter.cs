@@ -50,7 +50,7 @@ namespace DiamondFAB.Quote.Services
                             // Divider
                             col.Item().Height(1).Background(greyBorder);
 
-                            // Line items
+                            // Line items (+ extra charges from settings)
                             col.Item().Element(c => BuildLineItemsTable(c, quote, greyHeader, greyBorder, greyPanel, white));
 
                             // Totals card
@@ -161,12 +161,12 @@ namespace DiamondFAB.Quote.Services
         }
 
         private static void BuildLineItemsTable(
-            IContainer container,
-            QuoteModel quote,
-            string headerBg,
-            string borderColor,
-            string zebraAltBg,
-            string white)
+    IContainer container,
+    QuoteModel quote,
+    string headerBg,
+    string borderColor,
+    string zebraAltBg,
+    string white)
         {
             container.Table(table =>
             {
@@ -178,7 +178,7 @@ namespace DiamondFAB.Quote.Services
                     cols.ConstantColumn(100); // Total
                 });
 
-                // Header (inline styling, no typed helpers)
+                // Header
                 table.Header(h =>
                 {
                     h.Cell().Background(headerBg).BorderBottom(1).BorderColor(borderColor)
@@ -194,15 +194,20 @@ namespace DiamondFAB.Quote.Services
                         .PaddingVertical(6).PaddingHorizontal(6).AlignRight().Text("Total").SemiBold();
                 });
 
-                // Rows
                 bool even = false;
+
+                // Render ONLY the quote's line items (no settings injection)
                 foreach (var item in quote.LineItems)
                 {
                     even = !even;
                     string bg = even ? white : zebraAltBg;
 
+                    var description = item.Description?.Replace("(Charge)", "", StringComparison.OrdinalIgnoreCase).Trim();
+                    if (string.IsNullOrEmpty(description))
+                        description = "Line Item";
+
                     table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6)
-                         .Text(item.Description);
+                         .Text(description);
 
                     table.Cell().Background(bg).PaddingVertical(4).PaddingHorizontal(6).AlignCenter()
                          .Text(item.Quantity.ToString());
