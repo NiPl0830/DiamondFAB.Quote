@@ -12,10 +12,17 @@ namespace DiamondFAB.Quote.Services
     {
         public static PrtData Parse(string filePath)
         {
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException(filePath);
+            try
+            {
+                if (!File.Exists(filePath))
+                    throw new FileNotFoundException($"File not found: {filePath}");
 
-            var doc = XDocument.Load(filePath);
+                // Check file size (reject files > 50MB to prevent XML bomb attacks)
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.Length > 50 * 1024 * 1024)
+                    throw new InvalidOperationException($"File too large: {Path.GetFileName(filePath)} ({fileInfo.Length / (1024 * 1024)}MB). Maximum size is 50MB.");
+
+                var doc = XDocument.Load(filePath);
 
             string GetValue(string tagName) =>
                 doc.Descendants(tagName).FirstOrDefault()?.Value.Trim() ?? string.Empty;
@@ -43,13 +50,36 @@ namespace DiamondFAB.Quote.Services
                 ProcessTimeMinutes = ParseDouble(processTimeStr ?? GetValue("ProcessTime"))
             };
 
-            return data;
+                Logger.Debug($"Successfully parsed XML file: {Path.GetFileName(filePath)}");
+                return data;
+            }
+            catch (FileNotFoundException ex)
+            {
+                Logger.Error($"XML file not found: {filePath}", ex);
+                throw new InvalidOperationException($"File not found: {Path.GetFileName(filePath)}", ex);
+            }
+            catch (System.Xml.XmlException ex)
+            {
+                Logger.Error($"Invalid XML format in {Path.GetFileName(filePath)}", ex);
+                throw new InvalidOperationException($"Invalid XML format in {Path.GetFileName(filePath)}: {ex.Message}", ex);
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw our own exceptions (file too large, etc.)
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Unexpected error parsing {Path.GetFileName(filePath)}", ex);
+                throw new InvalidOperationException($"Error parsing {Path.GetFileName(filePath)}: {ex.Message}", ex);
+            }
         }
 
         public static List<PartDetail> ParsePartDetails(string filePath)
         {
-            var partDetails = new List<PartDetail>();
-            var doc = XDocument.Load(filePath);
+            try
+            {
+                var partDetails = new List<PartDetail>();
+                var doc = XDocument.Load(filePath);
 
             var partElements = doc.Descendants("Parts");
             foreach (var part in partElements)
@@ -74,7 +104,18 @@ namespace DiamondFAB.Quote.Services
                 });
             }
 
-            return partDetails;
+                return partDetails;
+            }
+            catch (System.Xml.XmlException ex)
+            {
+                Logger.Error($"Invalid XML format while parsing part details in {Path.GetFileName(filePath)}", ex);
+                throw new InvalidOperationException($"Invalid XML format in {Path.GetFileName(filePath)}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error parsing part details from {Path.GetFileName(filePath)}", ex);
+                throw new InvalidOperationException($"Error parsing part details from {Path.GetFileName(filePath)}: {ex.Message}", ex);
+            }
         }
 
         static double ParseDouble(string? str) =>

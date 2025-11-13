@@ -77,5 +77,17 @@ namespace DiamondFAB.Quote.Services
             list.RemoveAll(c => c.Id == id);
             SaveAll(list);
         }
+
+        // Alias for Add (which handles both insert and update)
+        public static void Update(Customer customer)
+        {
+            Add(customer);
+        }
+
+        // Alias for Remove with clearer intent
+        public static void Delete(string id)
+        {
+            Remove(id);
+        }
     }
 }

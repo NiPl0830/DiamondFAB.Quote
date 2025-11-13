@@ -13,7 +13,6 @@ namespace DiamondFAB.Quote.Models
         public int Quantity { get; set; }           // formerly PartQty
         public double Area { get; set; }            // from AreaP or similar
         public double CutDistance { get; set; }
-        public List<PartDetail> PartDetails { get; set; } = new();
 
         // Cost breakdown
         public double LaserCost { get; set; }

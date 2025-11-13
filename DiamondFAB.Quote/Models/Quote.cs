@@ -13,6 +13,15 @@ namespace DiamondFAB.Quote.Models
         // Formatted string like "Q-000123"
         public string? QuoteNumber { get; set; }
 
+        // Additional quote metadata
+        public string? Notes { get; set; }
+        public string? Status { get; set; } = "Draft";  // Draft, Sent, Accepted, Rejected
+        public DateTime? ExpirationDate { get; set; }
+        public string? PONumber { get; set; }
+        public string? CustomerAddress { get; set; }
+        public string? CustomerEmail { get; set; }
+        public string? CustomerPhone { get; set; }
+
         private List<LineItem> _lineItems = new();
         public List<LineItem> LineItems
         {

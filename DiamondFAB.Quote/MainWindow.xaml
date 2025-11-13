@@ -5,17 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiamondFAB.Quote.ViewModels"
         xmlns:conv="clr-namespace:DiamondFAB.Quote.Converters"
-
-
         mc:Ignorable="d"
         Title="{Binding AppTitle}"
-        Height="640" Width="1180"
+        Height="840" Width="1480"
         MinHeight="560" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#0F1115"
         AllowDrop="True"
         DragEnter="Window_DragEnter"
         Drop="Window_Drop">
+
+    <!-- Keyboard Shortcuts -->
+    <Window.InputBindings>
+        <KeyBinding Key="I" Modifiers="Ctrl" Command="{Binding ImportXmlFilesCommand}"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveQuoteCommand}"/>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadSavedQuotesCommand}"/>
+        <KeyBinding Key="P" Modifiers="Ctrl" Command="{Binding ExportPdfCommand}"/>
+        <KeyBinding Key="E" Modifiers="Ctrl+Shift" Command="{Binding ExportCsvCommand}"/>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding StartNewQuoteCommand}"/>
+    </Window.InputBindings>
 
     <!-- DataContext -->
     <Window.DataContext>
@@ -220,6 +228,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -228,14 +237,29 @@
                     <TextBlock Style="{StaticResource Overline}" Text="'Quoting jobs faster than your Wi-Fi'" Margin="8,6,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource DangerButton}" Click="ClearButton_Click" Margin="0,0,8,0">
+                <!-- Quote Number Editor -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Quote #"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding CurrentQuote.QuoteNumber, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ModernTextBox}"
+                             MinWidth="140"
+                             VerticalAlignment="Center"
+                             ToolTip="Edit quote number"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource DangerButton}" Click="ClearButton_Click" Margin="0,0,8,0"
+                            ToolTip="Clear current quote and start new (Ctrl+N)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🧹" Margin="0,0,6,0"/>
                             <TextBlock Text="Clear"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource PrimaryButton}" Click="SettingsButton_Click">
+                    <Button Style="{StaticResource PrimaryButton}" Click="SettingsButton_Click"
+                            ToolTip="Open application settings (F5)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⚙" Margin="0,0,6,0"/>
                             <TextBlock Text="Settings"/>
@@ -288,20 +312,61 @@
 
         <!-- RIGHT: GRID CARD -->
         <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
-            <DataGrid ItemsSource="{Binding LineItems}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      IsReadOnly="True"
-                      ColumnHeaderHeight="34"
-                      RowHeight="34"
-                      AlternationCount="2">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="4*"/>
-                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="1*"/>
-                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=C}" Width="1.5*"/>
-                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="1.5*"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search Box -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="True">
+                    <TextBlock Text="Filter:"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"
+                               DockPanel.Dock="Left"/>
+                    <TextBox x:Name="FilterBox"
+                             Style="{StaticResource ModernTextBox}"
+                             TextChanged="FilterBox_TextChanged"
+                             ToolTip="Filter line items by description"/>
+                </DockPanel>
+
+                <!-- DataGrid -->
+                <DataGrid Grid.Row="1"
+                          x:Name="LineItemsGrid"
+                          ItemsSource="{Binding LineItems}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          ColumnHeaderHeight="34"
+                          RowHeight="36"
+                          AlternationCount="2"
+                          CellEditEnding="LineItemsGrid_CellEditEnding">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Width="4*"/>
+                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="1*"/>
+                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}" Width="1.5*"/>
+                        <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C}" Width="1.5*" IsReadOnly="True"/>
+
+                        <!-- Delete Button Column -->
+                        <DataGridTemplateColumn Header="Actions" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕"
+                                            Click="DeleteLineItem_Click"
+                                            Background="{StaticResource DangerBrush}"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            Padding="8,4"
+                                            MinWidth="32"
+                                            Height="28"
+                                            ToolTip="Delete this line item"
+                                            Cursor="Hand"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
         </Border>
 
         <!-- FOOTER -->
@@ -315,34 +380,71 @@
             <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,12,0">
                 <StackPanel>
                     <TextBlock Text="{Binding CurrentQuote.Subtotal, StringFormat=Subtotal: {0:C}}" 
-               Foreground="{StaticResource TextSecondaryBrush}"/>
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
 
                     <!-- Show discount only if > 0 -->
                     <TextBlock Text="{Binding CurrentQuote.DiscountAmount, StringFormat=Discount: -{0:C}}"
-               Foreground="{StaticResource TextSecondaryBrush}"
-               Visibility="{Binding CurrentQuote.DiscountAmount, Converter={StaticResource ZeroToCollapsedConverter}}"/>
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Visibility="{Binding CurrentQuote.DiscountAmount, Converter={StaticResource ZeroToCollapsedConverter}}"/>
 
                     <TextBlock Text="{Binding CurrentQuote.Tax, StringFormat=Tax: {0:C}}"
-               Foreground="{StaticResource TextSecondaryBrush}"/>
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
 
                     <TextBlock Text="{Binding CurrentQuote.GrandTotal, StringFormat=Total: {0:C}}"
-               FontWeight="Bold" FontSize="16"
-               Foreground="{StaticResource TextPrimaryBrush}"/>
+                               FontWeight="Bold" FontSize="16"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
                 </StackPanel>
             </Border>
 
             <!-- Actions -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Button Style="{StaticResource PrimaryButton}" Command="{Binding ImportXmlFilesCommand}" Margin="0,0,8,0">
+                <Button Style="{StaticResource PrimaryButton}" Click="AddManualItem_Click" Margin="0,0,8,0"
+                        ToolTip="Add a custom line item to the quote">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="+" Margin="0,0,6,0"/>
+                        <TextBlock Text="Add Item"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding ImportXmlFilesCommand}" Margin="0,0,8,0"
+                        ToolTip="Import XML nesting files to create quote (Ctrl+I)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="⬆" Margin="0,0,6,0"/>
                         <TextBlock Text="Import .XML"/>
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource PrimaryButton}" Click="ExportPdfButton_Click">
+
+                <!-- NEW: Save Quote -->
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding SaveQuoteCommand}" Margin="0,0,8,0"
+                        ToolTip="Save current quote for later (Ctrl+S)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💾" Margin="0,0,6,0"/>
+                        <TextBlock Text="Save Quote"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- NEW: Load Saved -->
+                <Button Style="{StaticResource PrimaryButton}" Command="{Binding LoadSavedQuotesCommand}" Margin="0,0,8,0"
+                        ToolTip="Load a previously saved quote (Ctrl+O)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📂" Margin="0,0,6,0"/>
+                        <TextBlock Text="Load Quote"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource PrimaryButton}" Click="ExportPdfButton_Click" Margin="0,0,8,0"
+                        ToolTip="Export quote as PDF document (Ctrl+P)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="🧾" Margin="0,0,6,0"/>
                         <TextBlock Text="Export PDF"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource PrimaryButton}" Click="ExportCsvButton_Click"
+                        ToolTip="Export quote as CSV spreadsheet (Ctrl+Shift+E)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📊" Margin="0,0,6,0"/>
+                        <TextBlock Text="Export CSV"/>
                     </StackPanel>
                 </Button>
             </StackPanel>

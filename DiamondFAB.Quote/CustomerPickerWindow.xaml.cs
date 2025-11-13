@@ -20,6 +20,20 @@ namespace DiamondFAB.Quote
         {
             InitializeComponent();
             LoadCustomers();
+            CustomerList.SelectionChanged += CustomerList_SelectionChanged;
+            UpdateButtonStates();
+        }
+
+        private void CustomerList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateButtonStates();
+        }
+
+        private void UpdateButtonStates()
+        {
+            bool hasSelection = CustomerList.SelectedItem != null;
+            EditButton.IsEnabled = hasSelection;
+            DeleteButton.IsEnabled = hasSelection;
         }
 
         private void LoadCustomers()
@@ -85,7 +99,7 @@ namespace DiamondFAB.Quote
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Width = 460,
-                Height = 380,
+                Height = 450,
                 ResizeMode = ResizeMode.NoResize,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F1115")),
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E9EDF5")),
@@ -127,7 +141,7 @@ namespace DiamondFAB.Quote
             var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            for (int i = 0; i < 5; i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            for (int i = 0; i < 6; i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             TextBox MakeBox() => new TextBox
             {
@@ -142,12 +156,14 @@ namespace DiamondFAB.Quote
             var nameLbl = new TextBlock { Text = "Company Name", Margin = new Thickness(0, 10, 12, 0) };
             var addrLbl = new TextBlock { Text = "Address", Margin = new Thickness(0, 10, 12, 0) };
             var emailLbl = new TextBlock { Text = "Email", Margin = new Thickness(0, 10, 12, 0) };
+            var phoneLbl = new TextBlock { Text = "Phone", Margin = new Thickness(0, 10, 12, 0) };
             var taxLbl = new TextBlock { Text = "Default Tax (%)", Margin = new Thickness(0, 10, 12, 0) };
             var discLbl = new TextBlock { Text = "Default Discount (%)", Margin = new Thickness(0, 10, 12, 0) };
 
             var nameBox = MakeBox();
             var addrBox = MakeBox();
             var emailBox = MakeBox();
+            var phoneBox = MakeBox();
             var taxBox = MakeBox();
             var discBox = MakeBox();
 
@@ -157,14 +173,17 @@ namespace DiamondFAB.Quote
             Grid.SetRow(addrBox, 1); Grid.SetColumn(addrBox, 1);
             Grid.SetRow(emailLbl, 2); Grid.SetColumn(emailLbl, 0);
             Grid.SetRow(emailBox, 2); Grid.SetColumn(emailBox, 1);
-            Grid.SetRow(taxLbl, 3); Grid.SetColumn(taxLbl, 0);
-            Grid.SetRow(taxBox, 3); Grid.SetColumn(taxBox, 1);
-            Grid.SetRow(discLbl, 4); Grid.SetColumn(discLbl, 0);
-            Grid.SetRow(discBox, 4); Grid.SetColumn(discBox, 1);
+            Grid.SetRow(phoneLbl, 3); Grid.SetColumn(phoneLbl, 0);
+            Grid.SetRow(phoneBox, 3); Grid.SetColumn(phoneBox, 1);
+            Grid.SetRow(taxLbl, 4); Grid.SetColumn(taxLbl, 0);
+            Grid.SetRow(taxBox, 4); Grid.SetColumn(taxBox, 1);
+            Grid.SetRow(discLbl, 5); Grid.SetColumn(discLbl, 0);
+            Grid.SetRow(discBox, 5); Grid.SetColumn(discBox, 1);
 
             grid.Children.Add(nameLbl); grid.Children.Add(nameBox);
             grid.Children.Add(addrLbl); grid.Children.Add(addrBox);
             grid.Children.Add(emailLbl); grid.Children.Add(emailBox);
+            grid.Children.Add(phoneLbl); grid.Children.Add(phoneBox);
             grid.Children.Add(taxLbl); grid.Children.Add(taxBox);
             grid.Children.Add(discLbl); grid.Children.Add(discBox);
 
@@ -235,6 +254,7 @@ namespace DiamondFAB.Quote
                     CompanyName = company,
                     Address = (addrBox.Text ?? string.Empty).Trim(),
                     Email = (emailBox.Text ?? string.Empty).Trim(),
+                    Phone = (phoneBox.Text ?? string.Empty).Trim(),
                     DefaultTaxRate = tax,
                     DefaultDiscountPercent = disc
                 };
@@ -267,6 +287,232 @@ namespace DiamondFAB.Quote
 
                 _all = all;
                 CustomerList.ItemsSource = _all;
+            }
+        }
+
+        // ================== EDIT CUSTOMER ==================
+        private void EditButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (CustomerList.SelectedItem is not Customer selectedCustomer)
+            {
+                MessageBox.Show("Please select a customer to edit.", "Edit Customer",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dlg = new Window
+            {
+                Title = "Edit Customer",
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Width = 460,
+                Height = 450,
+                ResizeMode = ResizeMode.NoResize,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F1115")),
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E9EDF5")),
+                ShowInTaskbar = false
+            };
+
+            var cardBrush = (Brush?)new BrushConverter().ConvertFromString("#181B22") ?? Brushes.Black;
+            var cardBorderBrush = (Brush?)new BrushConverter().ConvertFromString("#242937") ?? Brushes.DimGray;
+            var inputBgBrush = (Brush?)new BrushConverter().ConvertFromString("#111319") ?? Brushes.Black;
+            var inputBorder = (Brush?)new BrushConverter().ConvertFromString("#2A3040") ?? Brushes.SlateGray;
+            var accentBrush = (Brush?)new BrushConverter().ConvertFromString("#4C8DF6") ?? Brushes.SteelBlue;
+
+            var root = new Grid { Margin = new Thickness(16) };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var header = new TextBlock
+            {
+                Text = "Edit Customer",
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(4, 0, 0, 10)
+            };
+            Grid.SetRow(header, 0);
+            root.Children.Add(header);
+
+            var card = new Border
+            {
+                Background = cardBrush,
+                BorderBrush = cardBorderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(14)
+            };
+            Grid.SetRow(card, 1);
+            root.Children.Add(card);
+
+            var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            for (int i = 0; i < 6; i++) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            TextBox MakeBox() => new TextBox
+            {
+                Background = inputBgBrush,
+                BorderBrush = inputBorder,
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(10, 6, 10, 6),
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+
+            var nameLbl = new TextBlock { Text = "Company Name", Margin = new Thickness(0, 10, 12, 0) };
+            var addrLbl = new TextBlock { Text = "Address", Margin = new Thickness(0, 10, 12, 0) };
+            var emailLbl = new TextBlock { Text = "Email", Margin = new Thickness(0, 10, 12, 0) };
+            var phoneLbl = new TextBlock { Text = "Phone", Margin = new Thickness(0, 10, 12, 0) };
+            var taxLbl = new TextBlock { Text = "Default Tax (%)", Margin = new Thickness(0, 10, 12, 0) };
+            var discLbl = new TextBlock { Text = "Default Discount (%)", Margin = new Thickness(0, 10, 12, 0) };
+
+            var nameBox = MakeBox();
+            var addrBox = MakeBox();
+            var emailBox = MakeBox();
+            var phoneBox = MakeBox();
+            var taxBox = MakeBox();
+            var discBox = MakeBox();
+
+            // Pre-populate with existing values
+            nameBox.Text = selectedCustomer.CompanyName ?? string.Empty;
+            addrBox.Text = selectedCustomer.Address ?? string.Empty;
+            emailBox.Text = selectedCustomer.Email ?? string.Empty;
+            phoneBox.Text = selectedCustomer.Phone ?? string.Empty;
+            taxBox.Text = selectedCustomer.DefaultTaxRate.ToString(CultureInfo.InvariantCulture);
+            discBox.Text = selectedCustomer.DefaultDiscountPercent.ToString(CultureInfo.InvariantCulture);
+
+            Grid.SetRow(nameLbl, 0); Grid.SetColumn(nameLbl, 0);
+            Grid.SetRow(nameBox, 0); Grid.SetColumn(nameBox, 1);
+            Grid.SetRow(addrLbl, 1); Grid.SetColumn(addrLbl, 0);
+            Grid.SetRow(addrBox, 1); Grid.SetColumn(addrBox, 1);
+            Grid.SetRow(emailLbl, 2); Grid.SetColumn(emailLbl, 0);
+            Grid.SetRow(emailBox, 2); Grid.SetColumn(emailBox, 1);
+            Grid.SetRow(phoneLbl, 3); Grid.SetColumn(phoneLbl, 0);
+            Grid.SetRow(phoneBox, 3); Grid.SetColumn(phoneBox, 1);
+            Grid.SetRow(taxLbl, 4); Grid.SetColumn(taxLbl, 0);
+            Grid.SetRow(taxBox, 4); Grid.SetColumn(taxBox, 1);
+            Grid.SetRow(discLbl, 5); Grid.SetColumn(discLbl, 0);
+            Grid.SetRow(discBox, 5); Grid.SetColumn(discBox, 1);
+
+            grid.Children.Add(nameLbl); grid.Children.Add(nameBox);
+            grid.Children.Add(addrLbl); grid.Children.Add(addrBox);
+            grid.Children.Add(emailLbl); grid.Children.Add(emailBox);
+            grid.Children.Add(phoneLbl); grid.Children.Add(phoneBox);
+            grid.Children.Add(taxLbl); grid.Children.Add(taxBox);
+            grid.Children.Add(discLbl); grid.Children.Add(discBox);
+
+            card.Child = grid;
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            Grid.SetRow(buttons, 2);
+
+            var cancelBtn = new Button
+            {
+                Content = "Cancel",
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B4358")),
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Height = 36,
+                MinWidth = 110,
+                Margin = new Thickness(0, 12, 8, 0)
+            };
+            cancelBtn.Click += (_, __) => dlg.DialogResult = false;
+
+            var saveBtn = new Button
+            {
+                Content = "Save",
+                Background = accentBrush,
+                Foreground = Brushes.White,
+                BorderThickness = new Thickness(0),
+                Height = 36,
+                MinWidth = 110,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+            saveBtn.Click += (_, __) =>
+            {
+                var company = (nameBox.Text ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(company))
+                {
+                    MessageBox.Show(dlg, "Company name is required.", "Validation",
+                                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                double ParsePercent(string? s)
+                {
+                    s ??= string.Empty;
+                    if (double.TryParse(s, NumberStyles.Any, CultureInfo.CurrentCulture, out var v)) return Clamp01(v);
+                    if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out v)) return Clamp01(v);
+                    return 0;
+                }
+
+                static double Clamp01(double v)
+                {
+                    if (v < 0) return 0;
+                    if (v > 100) return 100;
+                    return v;
+                }
+
+                var tax = ParsePercent(taxBox.Text);
+                var disc = ParsePercent(discBox.Text);
+
+                // Update the existing customer
+                selectedCustomer.CompanyName = company;
+                selectedCustomer.Address = (addrBox.Text ?? string.Empty).Trim();
+                selectedCustomer.Email = (emailBox.Text ?? string.Empty).Trim();
+                selectedCustomer.Phone = (phoneBox.Text ?? string.Empty).Trim();
+                selectedCustomer.DefaultTaxRate = tax;
+                selectedCustomer.DefaultDiscountPercent = disc;
+
+                CustomerRepository.Update(selectedCustomer);
+                Logger.Information($"Customer updated: {company}");
+                dlg.DialogResult = true;
+            };
+
+            buttons.Children.Add(cancelBtn);
+            buttons.Children.Add(saveBtn);
+
+            root.Children.Add(buttons);
+            dlg.Content = root;
+
+            // Show and refresh list if something was edited
+            var result = dlg.ShowDialog();
+            if (result == true)
+            {
+                LoadCustomers();
+                SearchBox_TextChanged(SearchBox, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
+            }
+        }
+
+        // ================== DELETE CUSTOMER ==================
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (CustomerList.SelectedItem is not Customer selectedCustomer)
+            {
+                MessageBox.Show("Please select a customer to delete.", "Delete Customer",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Are you sure you want to delete customer '{selectedCustomer.CompanyName}'?\n\nThis action cannot be undone.",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                CustomerRepository.Delete(selectedCustomer.Id);
+                Logger.Information($"Customer deleted: {selectedCustomer.CompanyName}");
+
+                LoadCustomers();
+                SearchBox_TextChanged(SearchBox, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
+                UpdateButtonStates();
             }
         }
     }

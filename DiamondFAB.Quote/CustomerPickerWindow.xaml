@@ -103,21 +103,48 @@
         </ListView>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <!-- Add New -->
-            <Button Content="+ Add New"
-                    Margin="0,0,8,0"
-                    Click="AddButton_Click"/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- Select -->
-            <Button Content="Select"
-                    Margin="0,0,8,0"
-                    Click="Select_Click"/>
+            <!-- Left-aligned Edit/Delete buttons -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="Edit"
+                        x:Name="EditButton"
+                        Margin="0,0,8,0"
+                        Background="#2A5F8F"
+                        Click="EditButton_Click"
+                        ToolTip="Edit the selected customer"/>
 
-            <!-- Cancel -->
-            <Button Content="Cancel"
-                    Background="#3B4358"
-                    Click="Cancel_Click"/>
-        </StackPanel>
+                <Button Content="Delete"
+                        x:Name="DeleteButton"
+                        Background="#A43636"
+                        Click="DeleteButton_Click"
+                        ToolTip="Delete the selected customer"/>
+            </StackPanel>
+
+            <!-- Right-aligned Add/Select/Cancel buttons -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Add New -->
+                <Button Content="+ Add New"
+                        Margin="0,0,8,0"
+                        Click="AddButton_Click"
+                        ToolTip="Add a new customer"/>
+
+                <!-- Select -->
+                <Button Content="Select"
+                        Margin="0,0,8,0"
+                        Click="Select_Click"
+                        ToolTip="Select the highlighted customer"/>
+
+                <!-- Cancel -->
+                <Button Content="Cancel"
+                        Background="#3B4358"
+                        Click="Cancel_Click"
+                        ToolTip="Close without selecting"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

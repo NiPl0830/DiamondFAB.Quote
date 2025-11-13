@@ -1,0 +1,82 @@
+<Window x:Class="DiamondFAB.Quote.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About DiamondFAB Quote"
+        Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#0F1115">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E9EDF5"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#AAB2C5"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#181B22"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#242937"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#4C8DF6"/>
+    </Window.Resources>
+
+    <Border Margin="20" Background="{StaticResource CardBrush}"
+            BorderBrush="{StaticResource CardBorderBrush}"
+            BorderThickness="1" CornerRadius="12" Padding="30">
+        <StackPanel>
+            <TextBlock Text="DiamondFAB Quote" FontSize="28" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock x:Name="VersionText" Text="Version 1.0.0" FontSize="14"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" Margin="0,0,0,30"/>
+
+            <Rectangle Height="1" Fill="{StaticResource CardBorderBrush}" Margin="0,0,0,20"/>
+
+            <TextBlock Text="Professional quoting software for laser cutting and fabrication businesses."
+                       FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" HorizontalAlignment="Center"
+                       TextAlignment="Center" Margin="0,0,0,30"/>
+
+            <TextBlock Text="Features:" FontSize="14" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+
+            <TextBlock FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="10,0,0,20">
+                • XML file import and parsing<LineBreak/>
+                • Automated cost calculations<LineBreak/>
+                • Professional PDF quote generation<LineBreak/>
+                • Customer management<LineBreak/>
+                • Quote history and tracking<LineBreak/>
+                • Duplicate detection<LineBreak/>
+                • CSV export functionality
+            </TextBlock>
+
+            <Rectangle Height="1" Fill="{StaticResource CardBorderBrush}" Margin="0,0,0,20"/>
+
+            <TextBlock FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                       TextAlignment="Center">
+                © 2025 DiamondFAB. All rights reserved.<LineBreak/>
+                Built with .NET 8 and WPF
+            </TextBlock>
+
+            <Button Content="Close" Width="100" Height="35" Margin="0,20,0,0"
+                    Background="{StaticResource AccentBrush}"
+                    Foreground="White" BorderThickness="0"
+                    Cursor="Hand" Click="CloseButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="8" Padding="15,8">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Border>
+</Window>

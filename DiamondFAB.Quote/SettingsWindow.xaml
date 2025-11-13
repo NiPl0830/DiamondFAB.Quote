@@ -1,15 +1,15 @@
-﻿<Window x:Class="DiamondFAB.Quote.SettingsWindow"
+<Window x:Class="DiamondFAB.Quote.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Settings"
-        Height="800"
-        Width="700"
-        MinHeight="520"
-        MinWidth="620"
-        WindowStartupLocation="CenterScreen"
+        Height="700"
+        Width="800"
+        MinHeight="600"
+        MinWidth="750"
+        WindowStartupLocation="CenterOwner"
         Background="#0F1115">
 
     <!-- THEME + STYLES -->
@@ -26,6 +26,7 @@
         <SolidColorBrush x:Key="InputBorderBrush"      Color="#2A3040"/>
         <SolidColorBrush x:Key="InputBorderHoverBrush" Color="#3B4358"/>
         <SolidColorBrush x:Key="DividerBrush"          Color="#232838"/>
+        <SolidColorBrush x:Key="ErrorBrush"            Color="#E74C3C"/>
 
         <!-- Typography -->
         <Style x:Key="H1" TargetType="TextBlock">
@@ -45,19 +46,21 @@
             <Setter Property="Margin" Value="0,14,0,6"/>
         </Style>
 
+        <Style x:Key="ErrorText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+
         <!-- Card container -->
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource CardBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.18"/>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Rounded TextBox -->
@@ -89,6 +92,9 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource InputBorderHoverBrush}"/>
                             </Trigger>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource ErrorBrush}"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -100,7 +106,7 @@
             <Setter Property="AcceptsReturn" Value="True"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="Height" Value="140"/>
+            <Setter Property="Height" Value="120"/>
         </Style>
 
         <!-- Primary Button -->
@@ -113,9 +119,8 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="HorizontalAlignment" Value="Right"/>
-            <Setter Property="MinWidth" Value="150"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Height" Value="38"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -138,15 +143,39 @@
             </Setter>
         </Style>
 
-        <!-- Divider line -->
-        <Style x:Key="Divider" TargetType="Separator">
-            <Setter Property="Margin" Value="0,16,0,16"/>
-            <Setter Property="Background" Value="{StaticResource DividerBrush}"/>
-            <Setter Property="Height" Value="1"/>
+        <!-- Secondary Button -->
+        <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+        <!-- Tab Control Style -->
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style TargetType="TabItem">
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Separator">
-                        <Border Background="{TemplateBinding Background}" Height="{TemplateBinding Height}"/>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" Padding="16,12" Margin="0,0,4,0" Background="{StaticResource CardBrush}"
+                                BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="8,8,0,0">
+                            <ContentPresenter x:Name="ContentSite" ContentSource="Header"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource InputBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -161,149 +190,331 @@
         </Grid.RowDefinitions>
 
         <!-- HEADER -->
-        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="20">
-            <DockPanel>
-                <TextBlock Text="Settings" Style="{StaticResource H1}" DockPanel.Dock="Left"/>
-                <TextBlock Text="Configure company info, customer defaults, rates, extra charges, and terms."
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           Margin="16,2,0,0" DockPanel.Dock="Left"/>
-            </DockPanel>
+        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="0,0,0,1" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Settings" Style="{StaticResource H1}"/>
+                <TextBlock Text="Configure company info, rates, charges, file locations, and preferences"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
         </Border>
 
-        <!-- CONTENT -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="20" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+        <!-- TABBED CONTENT -->
+        <TabControl Grid.Row="1" Margin="20,10,20,0">
 
-                <!-- Company Info -->
-                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+            <!-- GENERAL TAB -->
+            <TabItem Header="General" FontSize="14" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                    <StackPanel>
 
-                        <DockPanel Grid.Row="0" Grid.ColumnSpan="2" LastChildFill="False">
-                            <TextBlock Text="Company Info" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
-                            <Button Content="Select Customer…"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Width="160"
-                                    Height="34"
-                                    Margin="8,0,0,0"
-                                    DockPanel.Dock="Right"
-                                    Click="SelectCustomerButton_Click"/>
-                        </DockPanel>
+                        <!-- Company Info -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Company Name" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="CompanyNameBox" Style="{StaticResource ModernTextBox}" />
+                                <DockPanel Grid.Row="0" Grid.ColumnSpan="2" LastChildFill="False" Margin="0,0,0,10">
+                                    <TextBlock Text="Customer Information" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
+                                    <Button Content="Select Customer…" Style="{StaticResource SecondaryButton}"
+                                            Width="150" Height="32" DockPanel.Dock="Right"
+                                            Click="SelectCustomerButton_Click"
+                                            ToolTip="Load info from saved customer"/>
+                                </DockPanel>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Company Address" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="CompanyAddressBox" Style="{StaticResource ModernTextBox}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Company Name" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="CompanyNameBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Customer company name (appears in PDF Bill To section)"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Contact Email" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="ContactEmailBox" Style="{StaticResource ModernTextBox}" />
-                    </Grid>
-                </Border>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Company Address" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" x:Name="CompanyAddressBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Customer address (appears in PDF Bill To section)"/>
 
-                <!-- Rates -->
-                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Contact Email" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Grid.Row="3" Grid.Column="1">
+                                    <TextBox x:Name="ContactEmailBox" Style="{StaticResource ModernTextBox}"
+                                             ToolTip="Customer email address"/>
+                                    <TextBlock x:Name="EmailErrorText" Style="{StaticResource ErrorText}" Visibility="Collapsed"
+                                               Text="Please enter a valid email address"/>
+                                </StackPanel>
 
-                        <TextBlock Grid.ColumnSpan="2" Text="Rates" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Company Phone" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" x:Name="CompanyPhoneBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Customer phone number"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Hourly Laser Rate ($/hr)" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="LaserRateBox" Style="{StaticResource ModernTextBox}" Width="180" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Company Logo" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel Grid.Row="5" Grid.Column="1" LastChildFill="True">
+                                    <Button Content="Browse..." DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                            Width="100" Height="32" Margin="8,0,0,0" Click="BrowseLogoButton_Click"
+                                            ToolTip="Select customer logo (optional)"/>
+                                    <TextBox x:Name="LogoPathBox" Style="{StaticResource ModernTextBox}" IsReadOnly="True"
+                                             ToolTip="Customer logo file path (PNG, JPG)"/>
+                                </DockPanel>
+                            </Grid>
+                        </Border>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Tax Rate (%)" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="TaxRateBox" Style="{StaticResource ModernTextBox}" Width="180" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Discount (%)" Style="{StaticResource FieldLabel}"/>
-                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="DiscountPercentBox" Style="{StaticResource ModernTextBox}" Width="180" />
-                    </Grid>
-                </Border>
+            <!-- RATES TAB -->
+            <TabItem Header="Rates &amp; Charges" FontSize="14" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                    <StackPanel>
 
-                <!-- Extra Charges -->
-                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                        <!-- Rates -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                        <TextBlock Grid.ColumnSpan="2" Text="Extra Charges" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Grid.ColumnSpan="3" Text="Pricing Rates" Style="{StaticResource SectionTitle}"/>
 
-                        <CheckBox Grid.Row="1" Grid.Column="0" x:Name="SetupHandlingCheck" Content="Setup / Handling" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                        <TextBox  Grid.Row="1" Grid.Column="1" x:Name="SetupHandlingAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Hourly Laser Rate" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Grid.Row="1" Grid.Column="1">
+                                    <TextBox x:Name="LaserRateBox" Style="{StaticResource ModernTextBox}"
+                                             ToolTip="Cost per hour of laser time ($/hr)"/>
+                                    <TextBlock x:Name="LaserRateErrorText" Style="{StaticResource ErrorText}" Visibility="Collapsed"
+                                               Text="Must be a positive number"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="$/hour" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,14,0,0"/>
 
-                        <CheckBox Grid.Row="2" Grid.Column="0" x:Name="DeburrCheck" Content="Deburr" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                        <TextBox  Grid.Row="2" Grid.Column="1" x:Name="DeburrAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Tax Rate" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Grid.Row="2" Grid.Column="1">
+                                    <TextBox x:Name="TaxRateBox" Style="{StaticResource ModernTextBox}"
+                                             ToolTip="Sales tax percentage"/>
+                                    <TextBlock x:Name="TaxRateErrorText" Style="{StaticResource ErrorText}" Visibility="Collapsed"
+                                               Text="Must be between 0 and 100"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="%" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,14,0,0"/>
 
-                        <CheckBox Grid.Row="3" Grid.Column="0" x:Name="WeldingCheck" Content="Welding" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                        <TextBox  Grid.Row="3" Grid.Column="1" x:Name="WeldingAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Default Discount" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Grid.Row="3" Grid.Column="1">
+                                    <TextBox x:Name="DiscountPercentBox" Style="{StaticResource ModernTextBox}"
+                                             ToolTip="Default discount percentage"/>
+                                    <TextBlock x:Name="DiscountErrorText" Style="{StaticResource ErrorText}" Visibility="Collapsed"
+                                               Text="Must be between 0 and 100"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="%" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,14,0,0"/>
+                            </Grid>
+                        </Border>
 
-                        <CheckBox Grid.Row="4" Grid.Column="0" x:Name="PaintCheck" Content="Paint" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
-                        <TextBox  Grid.Row="4" Grid.Column="1" x:Name="PaintAmountBox" Style="{StaticResource ModernTextBox}" Width="120" ToolTip="Flat amount ($)"/>
-                    </Grid>
-                </Border>
+                        <!-- Extra Charges -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="150"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                <!-- Terms & Conditions -->
-                <Border Style="{StaticResource Card}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                                <TextBlock Grid.ColumnSpan="2" Text="Extra Charges" Style="{StaticResource SectionTitle}"/>
 
-                        <TextBlock Text="Terms &amp; Conditions" Style="{StaticResource SectionTitle}"/>
-                        <TextBox x:Name="TermsBox" Grid.Row="1" Style="{StaticResource ModernMultilineTextBox}"/>
-                    </Grid>
-                </Border>
+                                <CheckBox Grid.Row="1" Grid.Column="0" x:Name="SetupHandlingCheck" Content="Setup / Handling"
+                                          Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,8"
+                                          ToolTip="Enable setup/handling charge on all quotes"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SetupHandlingAmountBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Flat amount ($)"/>
 
-            </StackPanel>
-        </ScrollViewer>
+                                <CheckBox Grid.Row="2" Grid.Column="0" x:Name="DeburrCheck" Content="Deburr"
+                                          Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,8"
+                                          ToolTip="Enable deburring charge"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" x:Name="DeburrAmountBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Flat amount ($)"/>
+
+                                <CheckBox Grid.Row="3" Grid.Column="0" x:Name="WeldingCheck" Content="Welding"
+                                          Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,8"
+                                          ToolTip="Enable welding charge"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" x:Name="WeldingAmountBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Flat amount ($)"/>
+
+                                <CheckBox Grid.Row="4" Grid.Column="0" x:Name="PaintCheck" Content="Paint"
+                                          Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,8"
+                                          ToolTip="Enable painting charge"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" x:Name="PaintAmountBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Flat amount ($)"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- PREFERENCES TAB -->
+            <TabItem Header="Preferences" FontSize="14" FontWeight="SemiBold">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                    <StackPanel>
+
+                        <!-- Your Company Information -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Your Company Information" Style="{StaticResource SectionTitle}"
+                                           ToolTip="Your business information (used in PDF headers)"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Your Company Name" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="YourCompanyNameBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Your business name (appears in PDF header)"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Your Company Address" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" x:Name="YourCompanyAddressBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Your business address (appears in PDF header)"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Your Contact Email" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" x:Name="YourContactEmailBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Your business email address"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Your Company Phone" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" x:Name="YourCompanyPhoneBox" Style="{StaticResource ModernTextBox}"
+                                         ToolTip="Your business phone number"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Your Company Logo" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel Grid.Row="5" Grid.Column="1" LastChildFill="True">
+                                    <Button Content="Browse..." DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                            Width="100" Height="32" Margin="8,0,0,0" Click="BrowseYourLogoButton_Click"
+                                            ToolTip="Select your logo image for PDF header"/>
+                                    <TextBox x:Name="YourLogoPathBox" Style="{StaticResource ModernTextBox}" IsReadOnly="True"
+                                             ToolTip="Your logo file path (PNG, JPG)"/>
+                                </DockPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- File Locations -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="File Locations" Style="{StaticResource SectionTitle}"/>
+
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Default Import Folder" Style="{StaticResource FieldLabel}"/>
+                                    <DockPanel Grid.Row="0" Grid.Column="1" LastChildFill="True">
+                                        <Button Content="Browse..." DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                                Width="100" Height="32" Margin="8,0,0,0" Click="BrowseImportFolderButton_Click"
+                                                ToolTip="Select default folder for XML imports"/>
+                                        <TextBox x:Name="DefaultImportFolderBox" Style="{StaticResource ModernTextBox}" IsReadOnly="True"
+                                                 ToolTip="Default folder when importing XML files"/>
+                                    </DockPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Quote Behavior -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Quote Behavior" Style="{StaticResource SectionTitle}"/>
+
+                                <CheckBox Grid.Row="1" x:Name="PreserveTaxRateCheck" Content="Preserve historical tax rates when loading saved quotes"
+                                          Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8" IsChecked="True"
+                                          ToolTip="When enabled, loaded quotes keep their original tax rate"/>
+
+                                <CheckBox Grid.Row="2" x:Name="PreserveDiscountCheck" Content="Preserve historical discounts when loading saved quotes"
+                                          Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8" IsChecked="True"
+                                          ToolTip="When enabled, loaded quotes keep their original discount"/>
+
+                                <!-- Divider -->
+                                <Rectangle Grid.Row="3" Height="1" Fill="{StaticResource DividerBrush}" Margin="0,12"/>
+
+                                <CheckBox Grid.Row="4" x:Name="ShowPartBreakdownCheck" Content="Show part-level breakdown in PDF quotes"
+                                          Foreground="{StaticResource TextPrimaryBrush}" Margin="0,12,0,8" IsChecked="True"
+                                          ToolTip="When enabled, part details are shown below each material's line items in the PDF"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Terms & Conditions -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Terms &amp; Conditions" Style="{StaticResource SectionTitle}"/>
+                                <TextBox x:Name="TermsBox" Grid.Row="1" Style="{StaticResource ModernMultilineTextBox}"
+                                         ToolTip="Default terms and conditions for all quotes"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+        </TabControl>
 
         <!-- FOOTER -->
-        <Border Grid.Row="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Padding="16">
+        <Border Grid.Row="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="0,1,0,0" Padding="16">
             <DockPanel LastChildFill="False">
-                <TextBlock x:Name="VersionTextBlock"
-                           DockPanel.Dock="Left"
-                           VerticalAlignment="Center"
-                           FontSize="12"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                <TextBlock x:Name="VersionTextBlock" DockPanel.Dock="Left" VerticalAlignment="Center"
+                           FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
                            Text="Version: Loading..." />
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Cancel"
-                            Style="{StaticResource PrimaryButton}"
-                            Width="120"
-                            Margin="0,0,10,0"
-                            Click="CancelButton_Click"/>
-                    <Button Content="Save Settings"
-                            Style="{StaticResource PrimaryButton}"
-                            Width="150"
-                            Click="SaveButton_Click"/>
+                    <Button Content="Cancel" Style="{StaticResource SecondaryButton}"
+                            Width="120" Margin="0,0,10,0" Click="CancelButton_Click"
+                            ToolTip="Close without saving"/>
+                    <Button Content="Save Settings" Style="{StaticResource PrimaryButton}"
+                            Width="150" Click="SaveButton_Click"
+                            ToolTip="Save all changes"/>
                 </StackPanel>
             </DockPanel>
         </Border>

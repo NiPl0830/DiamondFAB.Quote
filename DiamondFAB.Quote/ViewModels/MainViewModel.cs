@@ -7,16 +7,19 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
 using QuoteModel = DiamondFAB.Quote.Models.Quote;
+
 
 namespace DiamondFAB.Quote.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        // ===== Bindables =====
         [ObservableProperty]
         private string appTitle;
 
@@ -29,65 +32,78 @@ namespace DiamondFAB.Quote.ViewModels
         public ObservableCollection<LineItem> LineItems { get; } = new();
         public ObservableCollection<PartDetail> PartDetails { get; } = new();
 
-        // ===== ctor =====
+        // Track imported files to prevent duplicates
+        private HashSet<string> _importedFileHashes = new();
+
         public MainViewModel()
         {
-            // Version for window title
-            var fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+            var fileVersion = FileVersionInfo
+                .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+                .FileVersion;
+
             string version = !string.IsNullOrWhiteSpace(fileVersion)
                 ? fileVersion.Split('+', '-')[0]
                 : (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0");
+
             AppTitle = $"DiamondFAB Quote v{version}";
 
-            // Load settings and seed quote
             AppSettings = SettingsService.Load();
 
             CurrentQuote.TaxRate = AppSettings.TaxRate;
             CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
             CurrentQuote.QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber();
+            CurrentQuote.AppSettings = AppSettings; // Store settings reference for PDF export
 
-            // Ensure any enabled extra charges appear immediately
-            SyncExtraCharges();
+            // ensure any enabled extra charges are present at startup
+            ApplyExtraChargesToQuote();
             CurrentQuote.NotifyTotalsChanged();
         }
 
-        // Keep quote math and charge lines synced to settings changes
         partial void OnAppSettingsChanged(Settings value)
         {
             CurrentQuote.TaxRate = value.TaxRate;
             CurrentQuote.DiscountPercent = value.DiscountPercent;
+            CurrentQuote.AppSettings = value; // Update settings reference
 
-            SyncExtraCharges();
+            ApplyExtraChargesToQuote();
             CurrentQuote.NotifyTotalsChanged();
         }
-
-        // ===== Commands =====
 
         [RelayCommand]
         private void StartNewQuote()
         {
             LineItems.Clear();
             PartDetails.Clear();
+            _importedFileHashes.Clear();
 
             CurrentQuote = new QuoteModel
             {
                 TaxRate = AppSettings.TaxRate,
                 DiscountPercent = AppSettings.DiscountPercent,
-                QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber()
+                QuoteNumber = QuoteNumberTracker.GetNextFormattedQuoteNumber(),
+                AppSettings = AppSettings // Store settings reference for PDF export
             };
 
-            // Add any enabled extra charges on a fresh quote
-            SyncExtraCharges();
+            ApplyExtraChargesToQuote();
             CurrentQuote.NotifyTotalsChanged();
+            Logger.Debug("Started new quote");
         }
 
         [RelayCommand]
         private void ImportXmlFiles()
         {
+            // Use configurable import folder from settings, with fallback
+            string? initialDir = AppSettings.DefaultImportFolder;
+
+            if (string.IsNullOrEmpty(initialDir) || !Directory.Exists(initialDir))
+            {
+                initialDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            }
+
             var dialog = new OpenFileDialog
             {
-                Filter = "XML files (*.xml)|*.xml",
-                InitialDirectory = @"C:\NestingSoftware\XML_Output",
+                Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
+                InitialDirectory = initialDir,
                 Multiselect = true,
                 Title = "Select XML File(s)"
             };
@@ -98,7 +114,6 @@ namespace DiamondFAB.Quote.ViewModels
             ImportXmlFiles(dialog.FileNames);
         }
 
-        // Pretty "Xh Ym" formatting for minute values
         private static string FormatMinutes(double minutes)
         {
             if (minutes <= 0) return "0m";
@@ -110,18 +125,40 @@ namespace DiamondFAB.Quote.ViewModels
 
         public void ImportXmlFiles(string[] filePaths)
         {
+            int successCount = 0;
+            int duplicateCount = 0;
+            int errorCount = 0;
+            var errors = new List<string>();
+
             foreach (var file in filePaths)
             {
-                var data = XmlFileParser.Parse(file);
+                try
+                {
+                    // Check for duplicate imports
+                    string fileHash = ComputeFileHash(file);
+                    if (_importedFileHashes.Contains(fileHash))
+                    {
+                        var result = MessageBox.Show(
+                            $"The file '{Path.GetFileName(file)}' appears to have been already imported. Import again?",
+                            "Duplicate File Detected",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Warning);
 
-                // Quantity of sheets/nests for MATERIAL math
+                        if (result != MessageBoxResult.Yes)
+                        {
+                            duplicateCount++;
+                            Logger.Information($"Skipped duplicate import: {file}");
+                            continue;
+                        }
+                    }
+
+                    var data = XmlFileParser.Parse(file);
+
                 int qty = Math.Max(1, data.RawMaterialQuantity);
 
-                // ---- LASER TIME (already full across all sheets) ----
-                // Use ProcessTimeMinutes directly; DO NOT multiply by qty
                 double totalMinutes = data.ProcessTimeMinutes > 0
                                     ? data.ProcessTimeMinutes
-                                    : FallbackMinutes(data);  // safety fallback if XML missing
+                                    : FallbackMinutes(data);
 
                 double totalHours = totalMinutes / 60.0;
                 string humanTime = FormatMinutes(totalMinutes);
@@ -134,11 +171,10 @@ namespace DiamondFAB.Quote.ViewModels
                     UnitPrice = laserCost
                 };
 
-                // ---- MATERIAL COST (qty * volume * density * $/lb) ----
                 double volumePerSheet = data.RawLength * data.RawWidth * data.MaterialThickness; // in^3
                 double weightPerSheet = volumePerSheet * data.Density;                            // lbs
                 double totalWeight = weightPerSheet * qty;                                        // lbs
-                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);             // $ total
+                double materialCost = Math.Round(totalWeight * data.MaterialCost, 2);             // $
 
                 var materialItem = new LineItem
                 {
@@ -147,122 +183,297 @@ namespace DiamondFAB.Quote.ViewModels
                     UnitPrice = Math.Round(materialCost / qty, 2)
                 };
 
-                // Add to UI collection and the quote model
                 LineItems.Add(laserItem);
                 LineItems.Add(materialItem);
                 CurrentQuote.LineItems.Add(laserItem);
                 CurrentQuote.LineItems.Add(materialItem);
 
-                // ---- PART-LEVEL DETAILS (page 2 of PDF) ----
                 var partList = XmlFileParser.ParsePartDetails(file);
                 if (CurrentQuote.PartDetails == null)
                     CurrentQuote.PartDetails = new List<PartDetail>();
 
-                // For part laser estimate, still fall back to feed rate + per-part cut distance
-                double feedForParts = data.FeedRate > 0 ? data.FeedRate : 1; // in/min guard
+                double feedForParts = data.FeedRate > 0 ? data.FeedRate : 1; // in/min
                 foreach (var part in partList)
                 {
-                    // Laser estimate per part
                     double minutesPerPart = part.CutDistance / feedForParts;
                     double hoursPerPart = minutesPerPart / 60.0;
                     part.LaserCost = Math.Round(hoursPerPart * AppSettings.HourlyLaserRate * part.Quantity, 2);
 
-                    // Material per part
                     double partVolume = part.Area * data.MaterialThickness; // in^3
                     double weightPerPart = partVolume * data.Density;       // lbs
                     part.MaterialCost = Math.Round(weightPerPart * data.MaterialCost * part.Quantity, 2);
 
                     CurrentQuote.PartDetails.Add(part);
                 }
+
+                    // Mark file as imported
+                    _importedFileHashes.Add(fileHash);
+                    successCount++;
+                    Logger.Information($"Successfully imported: {Path.GetFileName(file)}");
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    errors.Add($"{Path.GetFileName(file)}: {ex.Message}");
+                    Logger.Error($"Failed to import {file}", ex);
+                }
             }
 
-            // Ensure extra charges remain represented (no duplicates)
-            SyncExtraCharges();
+            ApplyExtraChargesToQuote();
 
             CurrentQuote.TaxRate = AppSettings.TaxRate;
             CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
             CurrentQuote.NotifyTotalsChanged();
+
+            // Show import summary
+            if (filePaths.Length > 1 || errorCount > 0 || duplicateCount > 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Import complete:");
+                sb.AppendLine($"  • Imported: {successCount}");
+                if (duplicateCount > 0) sb.AppendLine($"  • Skipped (duplicates): {duplicateCount}");
+                if (errorCount > 0)
+                {
+                    sb.AppendLine($"  • Failed: {errorCount}");
+                    sb.AppendLine();
+                    sb.AppendLine("Errors:");
+                    foreach (var error in errors)
+                    {
+                        sb.AppendLine($"  • {error}");
+                    }
+                }
+
+                MessageBox.Show(sb.ToString(), "Import Summary",
+                    MessageBoxButton.OK,
+                    errorCount > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+            }
+        }
+
+        private static string ComputeFileHash(string filePath)
+        {
+            using var sha256 = SHA256.Create();
+            using var stream = File.OpenRead(filePath);
+            byte[] hash = sha256.ComputeHash(stream);
+            return BitConverter.ToString(hash).Replace("-", "");
         }
 
         private static double FallbackMinutes(PrtData data)
         {
-            // Old-school estimate if ProcessTimeMinutes missing
-            double feed = data.FeedRate > 0 ? data.FeedRate : 1;                 // in/min
-            double timeCutMin = data.TotalCutDistance / feed;                    // minutes
-            double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0; // minutes
+            double feed = data.FeedRate > 0 ? data.FeedRate : 1;
+            double timeCutMin = data.TotalCutDistance / feed;
+            double timePierceMin = (data.PierceRateSec * data.TotalPierces) / 60.0;
             return timeCutMin + timePierceMin;
         }
 
-        // ===== Extra Charges wiring =====
+        // ================= Extra Charges wiring =================
 
-        private static bool IsLegacyChargeLine(LineItem item)
+        private static bool IsExtraChargeLine(LineItem item) =>
+            item.Description != null &&
+            item.Description.EndsWith(" (Charge)", StringComparison.OrdinalIgnoreCase);
+
+        private void ApplyExtraChargesToQuote()
         {
-            // Detect legacy suffix to clean them up
-            return item.Description != null &&
-                   item.Description.EndsWith(" (Charge)", StringComparison.OrdinalIgnoreCase);
-        }
+            if (CurrentQuote == null) return;
 
-        private static string Normalize(string? s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return "";
-            return s.Replace("(Charge)", "", StringComparison.OrdinalIgnoreCase).Trim();
-        }
+            // Remove existing charge lines
+            foreach (var li in CurrentQuote.LineItems.Where(IsExtraChargeLine).ToList())
+                CurrentQuote.LineItems.Remove(li);
+            foreach (var li in LineItems.Where(IsExtraChargeLine).ToList())
+                LineItems.Remove(li);
 
-        /// <summary>
-        /// Removes any existing charge lines and adds the currently enabled charges
-        /// from AppSettings. Keeps UI and model lists in sync and avoids duplicates.
-        /// </summary>
-        private void SyncExtraCharges()
-        {
-            if (CurrentQuote is null) return;
-
-            // Remove legacy "(Charge)" lines from both collections
-            var legacyModel = CurrentQuote.LineItems.Where(IsLegacyChargeLine).ToList();
-            foreach (var li in legacyModel) CurrentQuote.LineItems.Remove(li);
-
-            var legacyUi = LineItems.Where(IsLegacyChargeLine).ToList();
-            foreach (var li in legacyUi) LineItems.Remove(li);
-
-            // If we have defined charges, also remove any lines whose description equals a charge Name
-            if (AppSettings?.ExtraCharges != null && AppSettings.ExtraCharges.Any())
+            // Add enabled charges
+            if (AppSettings?.ExtraCharges != null)
             {
-                var chargeNames = AppSettings.ExtraCharges
-                    .Select(c => Normalize(c.Name))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var modelMatches = CurrentQuote.LineItems
-                    .Where(li => chargeNames.Contains(Normalize(li.Description)))
-                    .ToList();
-                foreach (var li in modelMatches) CurrentQuote.LineItems.Remove(li);
-
-                var uiMatches = LineItems
-                    .Where(li => chargeNames.Contains(Normalize(li.Description)))
-                    .ToList();
-                foreach (var li in uiMatches) LineItems.Remove(li);
-            }
-
-            // Add enabled charges (no suffix), de-duped
-            if (AppSettings?.ExtraCharges == null) return;
-
-            foreach (var charge in AppSettings.ExtraCharges.Where(c => c.IsEnabled && c.Amount > 0))
-            {
-                var label = Normalize(charge.Name);
-
-                bool exists = CurrentQuote.LineItems.Any(li =>
-                    string.Equals(Normalize(li.Description), label, StringComparison.OrdinalIgnoreCase));
-
-                if (exists) continue;
-
-                var li = new LineItem
+                foreach (var charge in AppSettings.ExtraCharges.Where(c => c.IsEnabled && c.Amount > 0))
                 {
-                    Description = label,
-                    Quantity = 1,
-                    UnitPrice = Math.Round(charge.Amount, 2)
-                };
+                    var li = new LineItem
+                    {
+                        Description = $"{charge.Name} (Charge)",
+                        Quantity = 1,
+                        UnitPrice = Math.Round(charge.Amount, 2)
+                    };
 
-                LineItems.Add(li);
-                CurrentQuote.LineItems.Add(li);
+                    LineItems.Add(li);
+                    CurrentQuote.LineItems.Add(li);
+                }
             }
         }
+
+        // ================= Save / Load (in-app) =================
+
+        [RelayCommand]
+        private void SaveQuote()
+        {
+            try
+            {
+                // keep the model in sync with UI-bound collections
+                CurrentQuote.LineItems = LineItems.ToList();
+                CurrentQuote.PartDetails = PartDetails.ToList();
+
+                // Capture current customer info from Settings when saving
+                CurrentQuote.CustomerName = string.IsNullOrWhiteSpace(AppSettings.CompanyName)
+                    ? "Unknown"
+                    : AppSettings.CompanyName!;
+                CurrentQuote.CustomerAddress = AppSettings.CompanyAddress;
+                CurrentQuote.CustomerEmail = AppSettings.ContactEmail;
+                CurrentQuote.CustomerPhone = AppSettings.CompanyPhone;
+
+                // save (void return)
+                SavedQuotesService.Save(CurrentQuote);
+
+                MessageBox.Show("Quote saved.", "Saved",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to save quote:\n{ex.Message}", "Save Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        [RelayCommand]
+        private void LoadSavedQuotes()
+        {
+            var picker = new SavedQuotesWindow();
+            // Set owner if you create from MainWindow code-behind, not needed here
+
+            if (picker.ShowDialog() == true && !string.IsNullOrWhiteSpace(picker.SelectedPath))
+            {
+                try
+                {
+                    var loaded = SavedQuotesService.Load(picker.SelectedPath);
+                    ApplyLoadedQuote(loaded);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to load quote:\n{ex.Message}", "Load Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void ApplyLoadedQuote(QuoteModel? loaded)
+        {
+            if (loaded == null) return;
+
+            CurrentQuote = loaded;
+
+            // refresh observable collections for UI
+            LineItems.Clear();
+            foreach (var li in loaded.LineItems ?? Enumerable.Empty<LineItem>())
+                LineItems.Add(li);
+
+            PartDetails.Clear();
+            foreach (var pd in loaded.PartDetails ?? Enumerable.Empty<PartDetail>())
+                PartDetails.Add(pd);
+
+            // Respect settings for preserving historical tax/discount rates
+            // Only override if the loaded quote has no rates set (0), or if preservation is disabled
+            if (!AppSettings.PreserveHistoricalTaxRates || CurrentQuote.TaxRate == 0)
+            {
+                CurrentQuote.TaxRate = AppSettings.TaxRate;
+            }
+
+            if (!AppSettings.PreserveHistoricalDiscounts || CurrentQuote.DiscountPercent == 0)
+            {
+                CurrentQuote.DiscountPercent = AppSettings.DiscountPercent;
+            }
+
+            ApplyExtraChargesToQuote();
+            CurrentQuote.NotifyTotalsChanged();
+            Logger.Information($"Loaded quote: {CurrentQuote.QuoteNumber}");
+        }
+
+        // ================= Export Commands (for keyboard shortcuts) =================
+
+        [RelayCommand]
+        private void ExportPdf()
+        {
+            if (CurrentQuote.LineItems.Count == 0)
+            {
+                MessageBox.Show("There is no quote to export. Please import a .PRT file first.",
+                    "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Get company name and quote number, sanitize for file name
+            string companyName = AppSettings.CompanyName?.Trim() ?? "Company";
+            string quoteNumber = CurrentQuote.QuoteNumber?.Trim() ?? "Quote";
+
+            // Remove invalid filename characters
+            foreach (var c in Path.GetInvalidFileNameChars())
+            {
+                companyName = companyName.Replace(c, '_');
+                quoteNumber = quoteNumber.Replace(c, '_');
+            }
+
+            var saveDialog = new SaveFileDialog
+            {
+                Filter = "PDF files (*.pdf)|*.pdf",
+                FileName = $"{companyName}_{quoteNumber}.pdf"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    PdfQuoteExporter.Export(CurrentQuote, AppSettings, saveDialog.FileName);
+                    Logger.Information($"PDF exported: {saveDialog.FileName}");
+                    MessageBox.Show("PDF Exported successfully!", "Export Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("PDF export failed", ex);
+                    MessageBox.Show($"Failed to export PDF:\n{ex.Message}", "Export Failed",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        [RelayCommand]
+        private void ExportCsv()
+        {
+            if (CurrentQuote.LineItems.Count == 0)
+            {
+                MessageBox.Show("There is no quote to export. Please import a .PRT file first.",
+                    "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Get company name and quote number, sanitize for file name
+            string companyName = AppSettings.CompanyName?.Trim() ?? "Company";
+            string quoteNumber = CurrentQuote.QuoteNumber?.Trim() ?? "Quote";
+
+            // Remove invalid filename characters
+            foreach (var c in Path.GetInvalidFileNameChars())
+            {
+                companyName = companyName.Replace(c, '_');
+                quoteNumber = quoteNumber.Replace(c, '_');
+            }
+
+            var saveDialog = new SaveFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv",
+                FileName = $"{companyName}_{quoteNumber}.csv"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    CsvExporter.ExportQuote(CurrentQuote, AppSettings, saveDialog.FileName);
+                    Logger.Information($"CSV exported: {saveDialog.FileName}");
+                    MessageBox.Show("CSV Exported successfully!", "Export Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("CSV export failed", ex);
+                    MessageBox.Show($"Failed to export CSV:\n{ex.Message}", "Export Failed",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
     }
 }
