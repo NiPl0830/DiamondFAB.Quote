@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.5.7.11] - 2025-01-13
+## [1.4.10.11] - 2025-01-13
 
 ### Added
 - **Delete button** for each line item in the quote grid

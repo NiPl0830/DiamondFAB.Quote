@@ -8,10 +8,10 @@
 		<UseWPF>true</UseWPF>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<SelfContained>false</SelfContained>
-		<Version>2.5.7</Version>
-		<AssemblyVersion>2.5.7.11</AssemblyVersion>
-		<FileVersion>2.5.7.11</FileVersion>
-		<InformationalVersion>2.5.7</InformationalVersion>
+		<Version>1.4.10</Version>
+		<AssemblyVersion>1.4.10.11</AssemblyVersion>
+		<FileVersion>1.4.10.11</FileVersion>
+		<InformationalVersion>1.4.10</InformationalVersion>
 		<ApplicationIcon>Assets\DiamondFAB_Quote_Logo.ico</ApplicationIcon>
 		<Platforms>AnyCPU;x64;ARM32</Platforms>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
