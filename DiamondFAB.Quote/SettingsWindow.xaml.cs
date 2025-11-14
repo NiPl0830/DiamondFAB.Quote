@@ -62,7 +62,6 @@ namespace DiamondFAB.Quote
             CompanyAddressBox.Text = _settings.CompanyAddress ?? string.Empty;
             ContactEmailBox.Text = _settings.ContactEmail ?? string.Empty;
             CompanyPhoneBox.Text = _settings.CompanyPhone ?? string.Empty;
-            LogoPathBox.Text = _settings.LogoPath ?? string.Empty;
 
             // Preferences Tab - Your Company Info
             YourCompanyNameBox.Text = _settings.YourCompanyName ?? string.Empty;
@@ -127,7 +126,6 @@ namespace DiamondFAB.Quote
                 _settings.CompanyAddress = CompanyAddressBox.Text?.Trim() ?? string.Empty;
                 _settings.ContactEmail = ContactEmailBox.Text?.Trim() ?? string.Empty;
                 _settings.CompanyPhone = CompanyPhoneBox.Text?.Trim() ?? string.Empty;
-                _settings.LogoPath = LogoPathBox.Text?.Trim() ?? string.Empty;
 
                 // Preferences Tab - Your Company Info
                 _settings.YourCompanyName = YourCompanyNameBox.Text?.Trim() ?? string.Empty;
@@ -250,21 +248,6 @@ namespace DiamondFAB.Quote
 
         // ========== FILE PICKERS ==========
 
-        private void BrowseLogoButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new OpenFileDialog
-            {
-                Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All files (*.*)|*.*",
-                Title = "Select Customer Logo",
-                CheckFileExists = true
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                LogoPathBox.Text = dialog.FileName;
-                Logger.Information($"Customer logo selected: {dialog.FileName}");
-            }
-        }
 
         private void BrowseYourLogoButton_Click(object sender, RoutedEventArgs e)
         {
@@ -277,8 +260,34 @@ namespace DiamondFAB.Quote
 
             if (dialog.ShowDialog() == true)
             {
-                YourLogoPathBox.Text = dialog.FileName;
-                Logger.Information($"Your company logo selected: {dialog.FileName}");
+                try
+                {
+                    // Copy logo to app data directory so it works on all computers
+                    string appDataDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "DiamondFAB.Quote");
+                    Directory.CreateDirectory(appDataDir);
+
+                    string extension = Path.GetExtension(dialog.FileName);
+                    string logoFileName = "company-logo" + extension;
+                    string destinationPath = Path.Combine(appDataDir, logoFileName);
+
+                    // Copy the selected logo to app data
+                    File.Copy(dialog.FileName, destinationPath, overwrite: true);
+
+                    // Save the app data path (not the original path)
+                    YourLogoPathBox.Text = destinationPath;
+                    Logger.Information($"Your company logo copied to: {destinationPath}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to copy logo file: {ex.Message}", ex);
+                    MessageBox.Show(
+                        $"Failed to copy logo file:\n{ex.Message}",
+                        "Logo Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
             }
         }
 

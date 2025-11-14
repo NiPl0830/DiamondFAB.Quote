@@ -221,7 +221,6 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <DockPanel Grid.Row="0" Grid.ColumnSpan="2" LastChildFill="False" Margin="0,0,0,10">
@@ -251,15 +250,6 @@
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Company Phone" Style="{StaticResource FieldLabel}"/>
                                 <TextBox Grid.Row="4" Grid.Column="1" x:Name="CompanyPhoneBox" Style="{StaticResource ModernTextBox}"
                                          ToolTip="Customer phone number"/>
-
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Company Logo" Style="{StaticResource FieldLabel}"/>
-                                <DockPanel Grid.Row="5" Grid.Column="1" LastChildFill="True">
-                                    <Button Content="Browse..." DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
-                                            Width="100" Height="32" Margin="8,0,0,0" Click="BrowseLogoButton_Click"
-                                            ToolTip="Select customer logo (optional)"/>
-                                    <TextBox x:Name="LogoPathBox" Style="{StaticResource ModernTextBox}" IsReadOnly="True"
-                                             ToolTip="Customer logo file path (PNG, JPG)"/>
-                                </DockPanel>
                             </Grid>
                         </Border>
 
@@ -412,9 +402,9 @@
                                 <DockPanel Grid.Row="5" Grid.Column="1" LastChildFill="True">
                                     <Button Content="Browse..." DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
                                             Width="100" Height="32" Margin="8,0,0,0" Click="BrowseYourLogoButton_Click"
-                                            ToolTip="Select your logo image for PDF header"/>
+                                            ToolTip="Select your logo image - it will be copied to app settings"/>
                                     <TextBox x:Name="YourLogoPathBox" Style="{StaticResource ModernTextBox}" IsReadOnly="True"
-                                             ToolTip="Your logo file path (PNG, JPG)"/>
+                                             ToolTip="Logo stored in app data (appears in PDF header)"/>
                                 </DockPanel>
                             </Grid>
                         </Border>

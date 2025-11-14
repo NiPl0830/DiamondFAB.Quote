@@ -1,4 +1,4 @@
-# DiamondFAB Quote v2.5.7.11 Release Notes
+# DiamondFAB Quote v1.4.11.11 Release Notes
 
 ## 🎉 Major Update: Enhanced PDF Exports & Line Item Management
 
@@ -53,7 +53,7 @@ This release brings significant improvements to quote management and PDF generat
 
 ---
 
-## 💡 Tips for Using v2.5.7.11
+## 💡 Tips for Using v1.4.11.11
 
 1. **Set up both company profiles** in Settings:
    - **Preferences → Your Company Information** (appears in PDF header)

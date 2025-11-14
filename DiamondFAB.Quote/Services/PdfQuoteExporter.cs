@@ -119,17 +119,29 @@ namespace DiamondFAB.Quote.Services
                             c.Item().Text(settings.YourCompanyPhone);
                     });
 
-                    // Use YourLogoPath, fallback to LogoPath
-                    string logoPath = !string.IsNullOrWhiteSpace(settings.YourLogoPath)
-                        ? settings.YourLogoPath
-                        : (settings.LogoPath ?? string.Empty);
+                    // Use company logo from Preferences tab
+                    string logoPath = settings.YourLogoPath ?? string.Empty;
 
                     if (!string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath))
-                        row.ConstantItem(110).Height(50).Element(e =>
+                    {
+                        try
                         {
-                            // QuestPDF 2023.5+ style
-                            e.Image(logoPath).FitArea();
-                        });
+                            row.ConstantItem(110).Height(50).Element(e =>
+                            {
+                                // QuestPDF 2023.5+ style
+                                e.Image(logoPath).FitArea();
+                            });
+                            Logger.Debug($"Logo loaded successfully: {logoPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warning($"Failed to load logo image from {logoPath}: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Logger.Warning($"Logo path is empty or file does not exist: {logoPath}");
+                    }
                 });
 
                 // Accent bar
